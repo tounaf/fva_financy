@@ -38,7 +38,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
   }
 
   double calculateGrandTotal() {
-    return offeringData.calculateGrandTotal() + offeringData.getTotalExpenses();
+    return offeringData.calculateGrandTotal();
   }
 
   // Fonction pour formater les montants avec séparateurs de milliers

@@ -76,78 +76,81 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _labelController,
-                    decoration: const InputDecoration(
-                      labelText: 'Expense Label',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter an expense label';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Amount (AR)',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter an amount';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return 'Please enter a valid number';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedDate == null
-                            ? 'Select Date'
-                            : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
-                        style: const TextStyle(fontSize: 16),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _labelController,
+                      decoration: const InputDecoration(
+                        labelText: 'Expense Label',
+                        border: OutlineInputBorder(),
                       ),
-                      ElevatedButton(
-                        onPressed: () => _selectDate(context),
-                        child: const Text('Pick Date'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: screen.primaryColor,
-                          foregroundColor: Colors.white,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an expense label';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _amountController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Amount (AR)',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an amount';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _selectedDate == null
+                              ? 'Select Date'
+                              : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
+                          style: const TextStyle(fontSize: 16),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _submitExpense,
-                    child: const Text('Add Expense'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: screen.primaryColor,
-                      foregroundColor: Colors.white,
+                        ElevatedButton(
+                          onPressed: () => _selectDate(context),
+                          child: const Text('Pick Date'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: screen.primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _submitExpense,
+                      child: const Text('Add Expense'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: screen.primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: ListView.builder(
+              const SizedBox(height: 24),
+              ListView.builder(
+                shrinkWrap: true, // Corrige le problème d'affichage
+                physics:
+                    const NeverScrollableScrollPhysics(), // Désactive le scroll pour éviter les conflits
                 itemCount: widget.offeringData.expenseData.expenses.length,
                 itemBuilder: (context, index) {
                   final expense =
@@ -159,34 +162,34 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   );
                 },
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    'Total Expenses: ${formatAmount(widget.offeringData.getTotalExpenses())}',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: screen.primaryColor,
                     ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  'Total Expenses: ${formatAmount(widget.offeringData.getTotalExpenses())}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: screen.primaryColor,
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
