@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Assure-toi que ce package est bien importé
 
 // Importer les constantes de couleur
 import '../utils/constants.dart' as constants;
@@ -68,6 +69,11 @@ class _OfferingTabState extends State<OfferingTab> {
     return total;
   }
 
+  // Fonction pour formater les montants avec séparateurs de milliers
+  String formatAmount(double amount) {
+    return NumberFormat.currency(locale: 'fr_FR', symbol: ' AR').format(amount);
+  }
+
   // Couleurs personnalisées pour chaque offrande
   Color getOfferingColor(String offering) {
     switch (offering) {
@@ -85,6 +91,10 @@ class _OfferingTabState extends State<OfferingTab> {
         return const Color(0xFF32CD32); // Vert lime (famille de vert)
       case 'ARIVA':
         return const Color(0xFFD4A017); // Or
+      case 'Tapabolana':
+        return const Color(0xFF50C878); // Vert (par défaut pour Vola miditra A)
+      case 'Sabata Mpitandrina':
+        return const Color(0xFF50C878); // Vert (par défaut pour Vola miditra A)
       default:
         return screen.primaryColor; // Bleu par défaut
     }
@@ -113,7 +123,7 @@ class _OfferingTabState extends State<OfferingTab> {
                 ],
               ),
               child: Text(
-                'Total ${widget.offering}: ${calculateTotal().toStringAsFixed(0)} AR',
+                'Total ${widget.offering}: ${formatAmount(calculateTotal())}',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -180,7 +190,7 @@ class _OfferingTabState extends State<OfferingTab> {
                       Expanded(
                         flex: 1,
                         child: Text(
-                          '${bill * (widget.quantities[bill] ?? 0)} AR',
+                          '${formatAmount((bill * (widget.quantities[bill] ?? 0)).toDouble())}', // Conversion explicite en double
                           textAlign: TextAlign.right,
                           style: const TextStyle(
                             fontSize: 16,

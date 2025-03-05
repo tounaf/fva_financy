@@ -26,7 +26,23 @@ class OfferingData {
     for (var offering in offeringTypes) {
       grandTotal += calculateTotalForOffering(offering);
     }
-
     return grandTotal;
+  }
+
+  // Calculer le total par catégorie
+  Map<String, double> calculateTotalsByCategory() {
+    Map<String, double> categoryTotals = {
+      'Vola miditra F': 0.0,
+      'Vola miditra A': 0.0,
+    };
+
+    for (var offering in offeringTypes) {
+      String category = offeringCategories[offering]!;
+      double offeringTotal = calculateTotalForOffering(offering);
+      categoryTotals[category] =
+          (categoryTotals[category] ?? 0) + offeringTotal;
+    }
+
+    return categoryTotals;
   }
 }
