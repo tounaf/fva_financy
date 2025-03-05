@@ -38,7 +38,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
   }
 
   double calculateGrandTotal() {
-    return offeringData.calculateGrandTotal();
+    return offeringData.calculateGrandTotal() + offeringData.getTotalExpenses();
   }
 
   // Fonction pour formater les montants avec séparateurs de milliers
@@ -64,90 +64,17 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             color: Colors.white,
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: [
-            ...offeringTypes.map((offering) {
-              double total = offeringData.calculateTotalForOffering(offering);
-              return Tab(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      offering,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      formatAmount(total),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-            const Tab(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Expenses',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '0 AR',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                ...offeringTypes.map((offering) {
-                  return OfferingTab(
-                    offering: offering,
-                    billTypes: billTypes,
-                    quantities: offeringData.quantities[offering]!,
-                    onQuantityChanged: (bill, count) {
-                      setState(() {
-                        offeringData.updateQuantity(offering, bill, count);
-                      });
-                    },
-                  );
-                }).toList(),
-                ExpenseScreen(
-                    offeringData:
-                        offeringData), // Passer offeringData pour accéder aux dépenses
-              ],
-            ),
-          ),
-          // Afficher les totaux par catégorie avec un design amélioré
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-            child: Container(
+      body: SingleChildScrollView(
+        // Rendre tout le contenu scrollable
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize:
+              MainAxisSize.min, // Limiter la taille au contenu minimum
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // "Totals by Category" et "Grand Total" deviennent scrollables
+            Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -195,11 +122,8 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                 ),
               ),
             ),
-          ),
-          // Grand total (offrandes + dépenses)
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
+            const SizedBox(height: 16),
+            Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
@@ -222,8 +146,101 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            // TabBar et TabBarView pour les offrandes et dépenses
+            Column(
+              mainAxisSize:
+                  MainAxisSize.min, // Limiter la taille au contenu minimum
+              children: [
+                Container(
+                  color: primaryColor,
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white70,
+                    indicatorColor: Colors.white,
+                    tabs: [
+                      ...offeringTypes.map((offering) {
+                        double total =
+                            offeringData.calculateTotalForOffering(offering);
+                        return Tab(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                offering,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                formatAmount(total),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      Tab(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Expenses',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              formatAmount(offeringData.getTotalExpenses()),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Remplacer Expanded par un Container avec une hauteur fixe ou flexible
+                Container(
+                  constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height -
+                          300), // Ajuster selon la hauteur disponible
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      ...offeringTypes.map((offering) {
+                        return OfferingTab(
+                          offering: offering,
+                          billTypes: billTypes,
+                          quantities: offeringData.quantities[offering]!,
+                          onQuantityChanged: (bill, count) {
+                            setState(() {
+                              offeringData.updateQuantity(
+                                  offering, bill, count);
+                            });
+                          },
+                        );
+                      }).toList(),
+                      ExpenseScreen(
+                          offeringData:
+                              offeringData), // Passer offeringData pour accéder aux dépenses
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
