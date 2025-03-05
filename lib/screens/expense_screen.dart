@@ -66,7 +66,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       appBar: AppBar(
         backgroundColor: screen.primaryColor,
         title: const Text(
-          'Fitanisana Vola mivoaka',
+          'Expense Counter',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -74,122 +74,125 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
           ),
         ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
+        // Conserver SingleChildScrollView pour le défilement
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _labelController,
-                      decoration: const InputDecoration(
-                        labelText: 'Antony',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Ampidiro ny antony';
-                        }
-                        return null;
-                      },
+        child: Column(
+          mainAxisSize:
+              MainAxisSize.min, // Limiter la taille de la colonne au contenu
+          children: [
+            Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize:
+                    MainAxisSize.min, // Limiter la taille du formulaire
+                children: [
+                  TextFormField(
+                    controller: _labelController,
+                    decoration: const InputDecoration(
+                      labelText: 'Expense Label',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _amountController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Vola (AR)',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Ampidiro ny vola';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Azafady, tarehimarika ampidirina';
-                        }
-                        return null;
-                      },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter an expense label';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Amount (AR)',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _selectedDate == null
-                              ? 'Safidio ny daty'
-                              : 'Daty: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
-                          style: const TextStyle(fontSize: 16),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter an amount';
+                      }
+                      if (double.tryParse(value) == null) {
+                        return 'Please enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedDate == null
+                            ? 'Select Date'
+                            : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _selectDate(context),
+                        child: const Text('Pick Date'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: screen.primaryColor,
+                          foregroundColor: Colors.white,
                         ),
-                        ElevatedButton(
-                          onPressed: () => _selectDate(context),
-                          child: const Text('Tsindrio ny daty'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: screen.primaryColor,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _submitExpense,
-                      child: const Text('Hanampy vola mivoaka'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: screen.primaryColor,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              ListView.builder(
-                shrinkWrap: true, // Corrige le problème d'affichage
-                physics:
-                    const NeverScrollableScrollPhysics(), // Désactive le scroll pour éviter les conflits
-                itemCount: widget.offeringData.expenseData.expenses.length,
-                itemBuilder: (context, index) {
-                  final expense =
-                      widget.offeringData.expenseData.expenses[index];
-                  return ListTile(
-                    title: Text(expense.label),
-                    subtitle: Text('Date: ${expense.formattedDate}'),
-                    trailing: Text(expense.formattedAmount),
-                  );
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    'Total vola nivoaka: ${formatAmount(widget.offeringData.getTotalExpenses())}',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: screen.primaryColor,
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _submitExpense,
+                    child: const Text('Add Expense'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: screen.primaryColor,
+                      foregroundColor: Colors.white,
                     ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Remplacer Expanded par un ListView avec shrinkWrap
+            ListView.builder(
+              shrinkWrap: true, // Ajuster la taille au contenu
+              physics:
+                  const NeverScrollableScrollPhysics(), // Désactiver le défilement indépendant
+              itemCount: widget.offeringData.expenseData.expenses.length,
+              itemBuilder: (context, index) {
+                final expense = widget.offeringData.expenseData.expenses[index];
+                return ListTile(
+                  title: Text(expense.label),
+                  subtitle: Text('Date: ${expense.formattedDate}'),
+                  trailing: Text(expense.formattedAmount),
+                );
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  'Total Expenses: ${formatAmount(widget.offeringData.getTotalExpenses())}',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: screen.primaryColor,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
