@@ -1,7 +1,10 @@
 import '../utils/constants.dart';
+import 'expense.dart'; // Importer le modèle Expense
 
 class OfferingData {
   Map<String, Map<int, int>> quantities = {};
+  final ExpenseData expenseData =
+      ExpenseData(); // Ajouter une instance d’ExpenseData
 
   OfferingData() {
     for (var offering in offeringTypes) {
@@ -44,5 +47,10 @@ class OfferingData {
     }
 
     return categoryTotals;
+  }
+
+  // Obtenir le total des dépenses
+  double getTotalExpenses() {
+    return expenseData.calculateTotalExpenses();
   }
 }

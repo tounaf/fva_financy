@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Ajouter cet import ici
-
+import 'package:intl/intl.dart';
 import '../widgets/offering_tab.dart';
 import '../models/offering_data.dart';
 import '../utils/constants.dart';
+import 'expense_screen.dart'; // Importer l’écran des dépenses
 
 const Color primaryColor = Color(0xFF4A90E2); // Bleu apaisant
 const Color accentColor = Color(0xFF50C878); // Vert espoir
@@ -26,7 +26,8 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: offeringTypes.length, vsync: this);
+    _tabController = TabController(
+        length: offeringTypes.length + 1, vsync: this); // +1 pour les dépenses
     offeringData = OfferingData();
   }
 
@@ -37,7 +38,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
   }
 
   double calculateGrandTotal() {
-    return offeringData.calculateGrandTotal();
+    return offeringData.calculateGrandTotal() + offeringData.getTotalExpenses();
   }
 
   // Fonction pour formater les montants avec séparateurs de milliers
@@ -56,7 +57,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
       appBar: AppBar(
         backgroundColor: primaryColor,
         title: const Text(
-          'Offering Counter',
+          'Offering & Expense Counter',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -69,30 +70,53 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
-          tabs: offeringTypes.map((offering) {
-            double total = offeringData.calculateTotalForOffering(offering);
-            return Tab(
+          tabs: [
+            ...offeringTypes.map((offering) {
+              double total = offeringData.calculateTotalForOffering(offering);
+              return Tab(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      offering,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      formatAmount(total),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            const Tab(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    offering,
-                    style: const TextStyle(
+                    'Expenses',
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    formatAmount(total),
-                    style: const TextStyle(
+                    '0 AR',
+                    style: TextStyle(
                       fontSize: 12,
                       color: Colors.white70,
                     ),
                   ),
                 ],
               ),
-            );
-          }).toList(),
+            ),
+          ],
         ),
       ),
       body: Column(
@@ -100,18 +124,23 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: offeringTypes.map((offering) {
-                return OfferingTab(
-                  offering: offering,
-                  billTypes: billTypes,
-                  quantities: offeringData.quantities[offering]!,
-                  onQuantityChanged: (bill, count) {
-                    setState(() {
-                      offeringData.updateQuantity(offering, bill, count);
-                    });
-                  },
-                );
-              }).toList(),
+              children: [
+                ...offeringTypes.map((offering) {
+                  return OfferingTab(
+                    offering: offering,
+                    billTypes: billTypes,
+                    quantities: offeringData.quantities[offering]!,
+                    onQuantityChanged: (bill, count) {
+                      setState(() {
+                        offeringData.updateQuantity(offering, bill, count);
+                      });
+                    },
+                  );
+                }).toList(),
+                ExpenseScreen(
+                    offeringData:
+                        offeringData), // Passer offeringData pour accéder aux dépenses
+              ],
             ),
           ),
           // Afficher les totaux par catégorie avec un design amélioré
@@ -156,12 +185,18 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                       formatAmount(categoryTotals['Vola miditra A']!),
                       categoryAColor,
                     ),
+                    const SizedBox(height: 8),
+                    _buildCategoryTile(
+                      'Total Expenses',
+                      formatAmount(offeringData.getTotalExpenses()),
+                      Colors.red, // Rouge pour différencier les dépenses
+                    ),
                   ],
                 ),
               ),
             ),
           ),
-          // Grand total
+          // Grand total (offrandes + dépenses)
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Container(
