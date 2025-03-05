@@ -57,7 +57,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
       appBar: AppBar(
         backgroundColor: primaryColor,
         title: const Text(
-          'Offering & Expense Counter',
+          'Fanisam-bola sy depanse isan-tsabata',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,

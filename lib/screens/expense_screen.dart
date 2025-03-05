@@ -66,7 +66,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       appBar: AppBar(
         backgroundColor: screen.primaryColor,
         title: const Text(
-          'Expense Counter',
+          'Fitanisana Vola mivoaka',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -86,12 +86,12 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     TextFormField(
                       controller: _labelController,
                       decoration: const InputDecoration(
-                        labelText: 'Expense Label',
+                        labelText: 'Antony',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter an expense label';
+                          return 'Ampidiro ny antony';
                         }
                         return null;
                       },
@@ -101,15 +101,15 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       controller: _amountController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Amount (AR)',
+                        labelText: 'Vola (AR)',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter an amount';
+                          return 'Ampidiro ny vola';
                         }
                         if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
+                          return 'Azafady, tarehimarika ampidirina';
                         }
                         return null;
                       },
@@ -120,13 +120,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       children: [
                         Text(
                           _selectedDate == null
-                              ? 'Select Date'
-                              : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
+                              ? 'Safidio ny daty'
+                              : 'Daty: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
                           style: const TextStyle(fontSize: 16),
                         ),
                         ElevatedButton(
                           onPressed: () => _selectDate(context),
-                          child: const Text('Pick Date'),
+                          child: const Text('Tsindrio ny daty'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: screen.primaryColor,
                             foregroundColor: Colors.white,
@@ -137,7 +137,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _submitExpense,
-                      child: const Text('Add Expense'),
+                      child: const Text('Hanampy vola mivoaka'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: screen.primaryColor,
                         foregroundColor: Colors.white,
@@ -179,7 +179,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   ),
                   padding: const EdgeInsets.all(12),
                   child: Text(
-                    'Total Expenses: ${formatAmount(widget.offeringData.getTotalExpenses())}',
+                    'Total vola nivoaka: ${formatAmount(widget.offeringData.getTotalExpenses())}',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
