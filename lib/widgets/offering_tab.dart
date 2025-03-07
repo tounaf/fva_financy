@@ -184,9 +184,22 @@ class _OfferingTabState extends State<OfferingTab> {
                             ),
                           ),
                           style: const TextStyle(fontSize: 16),
+                          onTap: () {
+                            // Si le texte est "0", le sélectionner pour remplacement
+                            if (_controllers[bill]!.text == '0') {
+                              _controllers[bill]!.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: _controllers[bill]!.text.length,
+                              );
+                            }
+                          },
                           onChanged: (value) {
                             int count = int.tryParse(value) ?? 0;
                             widget.onQuantityChanged(bill, count);
+                            // Synchroniser uniquement si la valeur a changé
+                            if (_controllers[bill]!.text != count.toString()) {
+                              _controllers[bill]!.text = count.toString();
+                            }
                           },
                         ),
                       ),
@@ -217,14 +230,14 @@ class _OfferingTabState extends State<OfferingTab> {
                       widget.isCompleted ? null : widget.onToggleCompletion,
                   icon: const Icon(Icons.check),
                   color: widget.isCompleted ? Colors.grey : Colors.green,
-                  tooltip: 'Terminer', // Pour l’accessibilité
+                  tooltip: 'Terminer',
                 ),
                 IconButton(
                   onPressed:
                       widget.isCompleted ? widget.onToggleCompletion : null,
                   icon: const Icon(Icons.edit),
                   color: widget.isCompleted ? Colors.orange : Colors.grey,
-                  tooltip: 'Rééditer', // Pour l’accessibilité
+                  tooltip: 'Rééditer',
                 ),
               ],
             ),
