@@ -82,8 +82,8 @@ class _OfferingTabState extends State<OfferingTab> {
         return const Color(0xFFFF4040);
       case 'Mavo':
         return const Color(0xFFFFD700);
-      case 'Maitso':
-        return const Color(0xFF32CD32);
+      // case 'Maitso':
+      //   return const Color(0xFF32CD32);
       case 'ARIVA':
         return const Color(0xFFD4A017);
       case 'Tapabolana':

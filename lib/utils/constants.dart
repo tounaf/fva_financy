@@ -4,7 +4,7 @@ const List<String> offeringTypes = [
   'Manga',
   'Mena',
   'Mavo',
-  'Maitso',
+  // 'Maitso',
   'ARIVA',
   'Tapabolana', // Nouvelle offrande
   'Sabata Mpitandrina', // Nouvelle offrande
@@ -29,7 +29,7 @@ const Map<String, String> offeringCategories = {
   'Mena': 'Vola miditra A',
   'Manga': 'Vola miditra A',
   'Mavo': 'Vola miditra A',
-  'Maitso': 'Vola miditra A',
+  // 'Maitso': 'Vola miditra A',
   'Tapabolana': 'Vola miditra A',
-  'Sabata Mpitandrina': 'Vola miditra A',
+  'Sabata Mpitandrina': 'Vola miditra A B',
 };
