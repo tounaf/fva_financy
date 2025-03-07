@@ -97,153 +97,153 @@ class _OfferingTabState extends State<OfferingTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: screen.backgroundColor,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: getOfferingColor(widget.offering).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total ${widget.offering}: ${formatAmount(calculateTotal())}',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: getOfferingColor(widget.offering),
-                    ),
-                  ),
-                  if (widget.isCompleted)
-                    const Icon(Icons.check_circle, color: Colors.green),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...widget.billTypes.map((bill) {
-              return Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
+                  color: getOfferingColor(widget.offering).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                      offset: const Offset(0, 2),
+                      color: Colors.grey.withOpacity(0.2),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          '$bill AR',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total ${widget.offering}: ${formatAmount(calculateTotal())}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: getOfferingColor(widget.offering),
                       ),
-                      Expanded(
-                        flex: 1,
-                        child: TextField(
-                          controller: _controllers[bill],
-                          keyboardType: TextInputType.number,
-                          enabled: !widget.isCompleted,
-                          decoration: InputDecoration(
-                            border: const OutlineInputBorder(),
-                            hintText: '0',
-                            filled: true,
-                            fillColor: widget.isCompleted
-                                ? Colors.grey[300]
-                                : Colors.grey[100],
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: getOfferingColor(widget.offering),
-                              ),
-                            ),
-                          ),
-                          style: const TextStyle(fontSize: 16),
-                          onTap: () {
-                            // Si le texte est "0", le sélectionner pour remplacement
-                            if (_controllers[bill]!.text == '0') {
-                              _controllers[bill]!.selection = TextSelection(
-                                baseOffset: 0,
-                                extentOffset: _controllers[bill]!.text.length,
-                              );
-                            }
-                          },
-                          onChanged: (value) {
-                            int count = int.tryParse(value) ?? 0;
-                            widget.onQuantityChanged(bill, count);
-                            // Synchroniser uniquement si la valeur a changé
-                            if (_controllers[bill]!.text != count.toString()) {
-                              _controllers[bill]!.text = count.toString();
-                            }
-                          },
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          formatAmount((bill * (widget.quantities[bill] ?? 0))
-                              .toDouble()),
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
+                    ),
+                    if (widget.isCompleted)
+                      const Icon(Icons.check_circle, color: Colors.green),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...widget.billTypes.map((bill) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                ),
-              );
-            }).toList(),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  onPressed:
-                      widget.isCompleted ? null : widget.onToggleCompletion,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                            '$bill AR',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: TextField(
+                            controller: _controllers[bill],
+                            keyboardType: TextInputType.number,
+                            enabled: !widget.isCompleted,
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              hintText: '0',
+                              filled: true,
+                              fillColor: widget.isCompleted
+                                  ? Colors.grey[300]
+                                  : Colors.grey[100],
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: getOfferingColor(widget.offering),
+                                ),
+                              ),
+                            ),
+                            style: const TextStyle(fontSize: 16),
+                            onTap: () {
+                              if (_controllers[bill]!.text == '0') {
+                                _controllers[bill]!.selection = TextSelection(
+                                  baseOffset: 0,
+                                  extentOffset: _controllers[bill]!.text.length,
+                                );
+                              }
+                            },
+                            onChanged: (value) {
+                              int count = int.tryParse(value) ?? 0;
+                              widget.onQuantityChanged(bill, count);
+                              if (_controllers[bill]!.text !=
+                                  count.toString()) {
+                                _controllers[bill]!.text = count.toString();
+                              }
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                            formatAmount((bill * (widget.quantities[bill] ?? 0))
+                                .toDouble()),
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+              const SizedBox(
+                  height:
+                      56), // Espace pour éviter que le contenu ne soit masqué par le bouton flottant
+            ],
+          ),
+        ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: widget.isCompleted
+              ? IconButton(
+                  onPressed: widget.onToggleCompletion,
+                  icon: const Icon(Icons.edit),
+                  color: Colors.orange,
+                  tooltip: 'Rééditer',
+                )
+              : IconButton(
+                  onPressed: widget.onToggleCompletion,
                   icon: const Icon(Icons.check),
-                  color: widget.isCompleted ? Colors.grey : Colors.green,
+                  color: Colors.green,
                   tooltip: 'Terminer',
                 ),
-                IconButton(
-                  onPressed:
-                      widget.isCompleted ? widget.onToggleCompletion : null,
-                  icon: const Icon(Icons.edit),
-                  color: widget.isCompleted ? Colors.orange : Colors.grey,
-                  tooltip: 'Rééditer',
-                ),
-              ],
-            ),
-          ],
         ),
-      ),
+      ],
     );
   }
 }
