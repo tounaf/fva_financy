@@ -1,19 +1,24 @@
 import '../utils/constants.dart';
-import 'expense.dart'; // Importer le modèle Expense
+import 'expense.dart';
 
 class OfferingData {
   Map<String, Map<int, int>> quantities = {};
-  final ExpenseData expenseData =
-      ExpenseData(); // Ajouter une instance d’ExpenseData
+  Map<String, bool> completionStatus = {}; // Nouvelle map pour l’état "terminé"
+  final ExpenseData expenseData = ExpenseData();
 
   OfferingData() {
     for (var offering in offeringTypes) {
       quantities[offering] = {for (var bill in billTypes) bill: 0};
+      completionStatus[offering] = false; // Par défaut, non terminé
     }
   }
 
   void updateQuantity(String offering, int bill, int count) {
     quantities[offering]![bill] = count;
+  }
+
+  void toggleCompletion(String offering) {
+    completionStatus[offering] = !(completionStatus[offering] ?? false);
   }
 
   double calculateTotalForOffering(String offering) {
@@ -29,10 +34,10 @@ class OfferingData {
     for (var offering in offeringTypes) {
       grandTotal += calculateTotalForOffering(offering);
     }
+    ;
     return grandTotal;
   }
 
-  // Calculer le total par catégorie
   Map<String, double> calculateTotalsByCategory() {
     Map<String, double> categoryTotals = {
       'Vola miditra F': 0.0,
@@ -49,7 +54,6 @@ class OfferingData {
     return categoryTotals;
   }
 
-  // Obtenir le total des dépenses
   double getTotalExpenses() {
     return expenseData.calculateTotalExpenses();
   }

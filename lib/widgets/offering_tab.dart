@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Assure-toi que ce package est bien importé
-
-// Importer les constantes de couleur
+import 'package:intl/intl.dart';
 import '../utils/constants.dart' as constants;
 import '../screens/offering_counter_screen.dart' as screen;
 
@@ -10,6 +8,8 @@ class OfferingTab extends StatefulWidget {
   final List<int> billTypes;
   final Map<int, int> quantities;
   final Function(int, int) onQuantityChanged;
+  final bool isCompleted;
+  final VoidCallback onToggleCompletion;
 
   const OfferingTab({
     super.key,
@@ -17,6 +17,8 @@ class OfferingTab extends StatefulWidget {
     required this.billTypes,
     required this.quantities,
     required this.onQuantityChanged,
+    required this.isCompleted,
+    required this.onToggleCompletion,
   });
 
   @override
@@ -31,13 +33,8 @@ class _OfferingTabState extends State<OfferingTab> {
     super.initState();
     _controllers = {
       for (var bill in widget.billTypes)
-        bill: TextEditingController(
-          text: widget.quantities[bill]
-              .toString(), // Toujours initialiser avec la valeur, même si 0
-        )
+        bill: TextEditingController(text: widget.quantities[bill].toString())
     };
-
-    // Synchroniser les contrôleurs avec les quantités initiales
     _syncControllersWithQuantities();
   }
 
@@ -51,7 +48,7 @@ class _OfferingTabState extends State<OfferingTab> {
   void didUpdateWidget(OfferingTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.quantities != oldWidget.quantities) {
-      _syncControllersWithQuantities(); // Mettre à jour les contrôleurs si les quantités changent
+      _syncControllersWithQuantities();
     }
   }
 
@@ -69,34 +66,32 @@ class _OfferingTabState extends State<OfferingTab> {
     return total;
   }
 
-  // Fonction pour formater les montants avec séparateurs de milliers
   String formatAmount(double amount) {
     return NumberFormat.currency(locale: 'fr_FR', symbol: ' AR').format(amount);
   }
 
-  // Couleurs personnalisées pour chaque offrande
   Color getOfferingColor(String offering) {
     switch (offering) {
       case 'R1':
-        return const Color(0xFF4A90E2); // Bleu
+        return const Color(0xFF4A90E2);
       case 'R2':
-        return const Color(0xFF50C878); // Vert
+        return const Color(0xFF50C878);
       case 'Manga':
-        return const Color(0xFF1E90FF); // Bleu vif (famille de bleu)
+        return const Color(0xFF1E90FF);
       case 'Mena':
-        return const Color(0xFFFF4040); // Rouge vif (famille de rouge)
+        return const Color(0xFFFF4040);
       case 'Mavo':
-        return const Color(0xFFFFD700); // Jaune doré (famille de jaune)
+        return const Color(0xFFFFD700);
       case 'Maitso':
-        return const Color(0xFF32CD32); // Vert lime (famille de vert)
+        return const Color(0xFF32CD32);
       case 'ARIVA':
-        return const Color(0xFFD4A017); // Or
+        return const Color(0xFFD4A017);
       case 'Tapabolana':
-        return const Color(0xFF50C878); // Vert (par défaut pour Vola miditra A)
+        return const Color(0xFF50C878);
       case 'Sabata Mpitandrina':
-        return const Color(0xFF50C878); // Vert (par défaut pour Vola miditra A)
+        return const Color(0xFF50C878);
       default:
-        return screen.primaryColor; // Bleu par défaut
+        return screen.primaryColor;
     }
   }
 
@@ -122,13 +117,20 @@ class _OfferingTabState extends State<OfferingTab> {
                   ),
                 ],
               ),
-              child: Text(
-                'Total ${widget.offering}: ${formatAmount(calculateTotal())}',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: getOfferingColor(widget.offering),
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Total ${widget.offering}: ${formatAmount(calculateTotal())}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: getOfferingColor(widget.offering),
+                    ),
+                  ),
+                  if (widget.isCompleted)
+                    const Icon(Icons.check_circle, color: Colors.green),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -167,30 +169,32 @@ class _OfferingTabState extends State<OfferingTab> {
                         child: TextField(
                           controller: _controllers[bill],
                           keyboardType: TextInputType.number,
+                          enabled: !widget.isCompleted,
                           decoration: InputDecoration(
                             border: const OutlineInputBorder(),
                             hintText: '0',
                             filled: true,
-                            fillColor: Colors.grey[100],
+                            fillColor: widget.isCompleted
+                                ? Colors.grey[300]
+                                : Colors.grey[100],
                             focusedBorder: OutlineInputBorder(
                               borderSide: BorderSide(
-                                  color: getOfferingColor(widget.offering)),
+                                color: getOfferingColor(widget.offering),
+                              ),
                             ),
                           ),
                           style: const TextStyle(fontSize: 16),
                           onChanged: (value) {
                             int count = int.tryParse(value) ?? 0;
-                            widget.onQuantityChanged(
-                                bill, count); // Mettre à jour immédiatement
-                            // S'assurer que le contrôleur reflète la valeur numérique
-                            _controllers[bill]!.text = count.toString();
+                            widget.onQuantityChanged(bill, count);
                           },
                         ),
                       ),
                       Expanded(
                         flex: 1,
                         child: Text(
-                          '${formatAmount((bill * (widget.quantities[bill] ?? 0)).toDouble())}', // Conversion explicite en double
+                          formatAmount((bill * (widget.quantities[bill] ?? 0))
+                              .toDouble()),
                           textAlign: TextAlign.right,
                           style: const TextStyle(
                             fontSize: 16,
@@ -204,6 +208,26 @@ class _OfferingTabState extends State<OfferingTab> {
                 ),
               );
             }).toList(),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                IconButton(
+                  onPressed:
+                      widget.isCompleted ? null : widget.onToggleCompletion,
+                  icon: const Icon(Icons.check),
+                  color: widget.isCompleted ? Colors.grey : Colors.green,
+                  tooltip: 'Terminer', // Pour l’accessibilité
+                ),
+                IconButton(
+                  onPressed:
+                      widget.isCompleted ? widget.onToggleCompletion : null,
+                  icon: const Icon(Icons.edit),
+                  color: widget.isCompleted ? Colors.orange : Colors.grey,
+                  tooltip: 'Rééditer', // Pour l’accessibilité
+                ),
+              ],
+            ),
           ],
         ),
       ),

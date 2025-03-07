@@ -3,13 +3,13 @@ import 'package:intl/intl.dart';
 import '../widgets/offering_tab.dart';
 import '../models/offering_data.dart';
 import '../utils/constants.dart';
-import 'expense_screen.dart'; // Importer l’écran des dépenses
+import 'expense_screen.dart';
 
-const Color primaryColor = Color(0xFF4A90E2); // Bleu apaisant
-const Color accentColor = Color(0xFF50C878); // Vert espoir
-const Color backgroundColor = Color(0xFFF5F7FA); // Fond clair
-const Color categoryFColor = Color(0xFF4A90E2); // Bleu pour Vola miditra F
-const Color categoryAColor = Color(0xFF50C878); // Vert pour Vola miditra A
+const Color primaryColor = Color(0xFF4A90E2);
+const Color accentColor = Color(0xFF50C878);
+const Color backgroundColor = Color(0xFFF5F7FA);
+const Color categoryFColor = Color(0xFF4A90E2);
+const Color categoryAColor = Color(0xFF50C878);
 
 class OfferingCounterScreen extends StatefulWidget {
   const OfferingCounterScreen({super.key});
@@ -26,8 +26,8 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-        length: offeringTypes.length + 1, vsync: this); // +1 pour les dépenses
+    _tabController =
+        TabController(length: offeringTypes.length + 1, vsync: this);
     offeringData = OfferingData();
   }
 
@@ -41,14 +41,12 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
     return offeringData.calculateGrandTotal() + offeringData.getTotalExpenses();
   }
 
-  // Fonction pour formater les montants avec séparateurs de milliers
   String formatAmount(double amount) {
     return NumberFormat.currency(locale: 'fr_FR', symbol: ' AR').format(amount);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Calculer les totaux par catégorie
     Map<String, double> categoryTotals =
         offeringData.calculateTotalsByCategory();
 
@@ -66,14 +64,11 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
         ),
       ),
       body: SingleChildScrollView(
-        // Rendre tout le contenu scrollable
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min, // Limiter la taille au contenu minimum
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // "Totals by Category" et "Grand Total" deviennent scrollables
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -116,7 +111,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                     _buildCategoryTile(
                       'Total Expenses',
                       formatAmount(offeringData.getTotalExpenses()),
-                      Colors.red, // Rouge pour différencier les dépenses
+                      Colors.red,
                     ),
                   ],
                 ),
@@ -147,10 +142,8 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
               ),
             ),
             const SizedBox(height: 16),
-            // TabBar et TabBarView pour les offrandes et dépenses
             Column(
-              mainAxisSize:
-                  MainAxisSize.min, // Limiter la taille au contenu minimum
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   color: primaryColor,
@@ -164,24 +157,39 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                       ...offeringTypes.map((offering) {
                         double total =
                             offeringData.calculateTotalForOffering(offering);
+                        bool isCompleted =
+                            offeringData.completionStatus[offering]!;
                         return Tab(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                offering,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    offering,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    formatAmount(total),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                formatAmount(total),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white70,
+                              if (isCompleted) ...[
+                                const SizedBox(width: 8),
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                  size: 20,
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         );
@@ -210,11 +218,10 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                     ],
                   ),
                 ),
-                // Remplacer Expanded par un Container avec une hauteur fixe ou flexible
                 Container(
                   constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height -
-                          300), // Ajuster selon la hauteur disponible
+                    maxHeight: MediaQuery.of(context).size.height - 300,
+                  ),
                   child: TabBarView(
                     controller: _tabController,
                     children: [
@@ -229,11 +236,15 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                                   offering, bill, count);
                             });
                           },
+                          isCompleted: offeringData.completionStatus[offering]!,
+                          onToggleCompletion: () {
+                            setState(() {
+                              offeringData.toggleCompletion(offering);
+                            });
+                          },
                         );
                       }).toList(),
-                      ExpenseScreen(
-                          offeringData:
-                              offeringData), // Passer offeringData pour accéder aux dépenses
+                      ExpenseScreen(offeringData: offeringData),
                     ],
                   ),
                 ),
@@ -245,7 +256,6 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
     );
   }
 
-  // Widget réutilisable pour chaque catégorie
   Widget _buildCategoryTile(String category, String amount, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
