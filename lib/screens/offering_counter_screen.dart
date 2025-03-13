@@ -22,6 +22,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late OfferingData offeringData;
+  bool _isLoading = true; // Indicateur de chargement
 
   @override
   void initState() {
@@ -29,6 +30,14 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
     _tabController =
         TabController(length: offeringTypes.length + 1, vsync: this);
     offeringData = OfferingData();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    await offeringData.loadData(); // Charger les données sauvegardées
+    setState(() {
+      _isLoading = false; // Mise à jour de l’interface une fois chargé
+    });
   }
 
   @override
@@ -47,6 +56,12 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     Map<String, double> categoryTotals =
         offeringData.calculateTotalsByCategory();
 
@@ -62,6 +77,16 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             color: Colors.white,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () async {
+              await offeringData.resetData();
+              setState(() {});
+            },
+            tooltip: 'Réinitialiser',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -87,7 +112,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Totals by Category:',
                       style: TextStyle(
                         fontSize: 20,

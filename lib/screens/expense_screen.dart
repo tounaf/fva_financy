@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
-import '../models/offering_data.dart'; // Importer OfferingData
+import '../models/offering_data.dart';
 import '../screens/offering_counter_screen.dart' as screen;
 
 class ExpenseScreen extends StatefulWidget {
-  final OfferingData offeringData; // Ajouter un paramètre pour OfferingData
+  final OfferingData offeringData;
 
   const ExpenseScreen({super.key, required this.offeringData});
 
@@ -33,18 +33,19 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  void _submitExpense() {
+  Future<void> _submitExpense() async {
     if (_formKey.currentState!.validate() && _selectedDate != null) {
       final double amount = double.tryParse(_amountController.text) ?? 0.0;
-      widget.offeringData.expenseData.addExpense(
+      await widget.offeringData.expenseData.addExpense(
         _labelController.text,
         amount,
         _selectedDate!,
       );
-      _labelController.clear();
-      _amountController.clear();
-      _selectedDate = null;
-      setState(() {});
+      setState(() {
+        _labelController.clear();
+        _amountController.clear();
+        _selectedDate = null;
+      });
     }
   }
 
@@ -75,17 +76,14 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        // Conserver SingleChildScrollView pour le défilement
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min, // Limiter la taille de la colonne au contenu
+          mainAxisSize: MainAxisSize.min,
           children: [
             Form(
               key: _formKey,
               child: Column(
-                mainAxisSize:
-                    MainAxisSize.min, // Limiter la taille du formulaire
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
                     controller: _labelController,
@@ -151,11 +149,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Remplacer Expanded par un ListView avec shrinkWrap
             ListView.builder(
-              shrinkWrap: true, // Ajuster la taille au contenu
-              physics:
-                  const NeverScrollableScrollPhysics(), // Désactiver le défilement indépendant
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: widget.offeringData.expenseData.expenses.length,
               itemBuilder: (context, index) {
                 final expense = widget.offeringData.expenseData.expenses[index];

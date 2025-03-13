@@ -6,19 +6,19 @@ const List<String> offeringTypes = [
   'Mavo',
   // 'Maitso',
   'ARIVA',
-  'Tapabolana', // Nouvelle offrande
-  'Sabata Mpitandrina', // Nouvelle offrande
+  'Tapabolana',
+  'Sabata Mpitandrina',
 ];
 
 const List<int> billTypes = [
-  100,
-  200,
-  500,
-  1000,
-  2000,
-  5000,
-  10000,
   20000,
+  10000,
+  5000,
+  2000,
+  1000,
+  500,
+  200,
+  100,
 ];
 
 // Définir les catégories
@@ -31,5 +31,5 @@ const Map<String, String> offeringCategories = {
   'Mavo': 'Vola miditra A',
   // 'Maitso': 'Vola miditra A',
   'Tapabolana': 'Vola miditra A',
-  'Sabata Mpitandrina': 'Vola miditra A B',
+  'Sabata Mpitandrina': 'Vola miditra A',
 };
