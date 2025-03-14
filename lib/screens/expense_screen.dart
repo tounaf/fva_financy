@@ -65,7 +65,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     return Scaffold(
       backgroundColor: screen.backgroundColor,
       appBar: AppBar(
-        backgroundColor: screen.primaryColor,
+        backgroundColor: screen.vibrantPurple, // Remplacement ici
         title: const Text(
           'Expense Counter',
           style: TextStyle(
@@ -130,7 +130,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                         onPressed: () => _selectDate(context),
                         child: const Text('Pick Date'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: screen.primaryColor,
+                          backgroundColor:
+                              screen.vibrantPurple, // Remplacement ici
                           foregroundColor: Colors.white,
                         ),
                       ),
@@ -141,7 +142,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     onPressed: _submitExpense,
                     child: const Text('Add Expense'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: screen.primaryColor,
+                      backgroundColor: screen.vibrantPurple, // Remplacement ici
                       foregroundColor: Colors.white,
                     ),
                   ),
@@ -183,7 +184,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: screen.primaryColor,
+                    color: screen.vibrantPurple, // Remplacement ici
                   ),
                 ),
               ),

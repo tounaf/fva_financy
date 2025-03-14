@@ -82,8 +82,6 @@ class _OfferingTabState extends State<OfferingTab> {
         return const Color(0xFFFF4040);
       case 'Mavo':
         return const Color(0xFFFFD700);
-      // case 'Maitso':
-      //   return const Color(0xFF32CD32);
       case 'ARIVA':
         return const Color(0xFFD4A017);
       case 'Tapabolana':
@@ -91,7 +89,7 @@ class _OfferingTabState extends State<OfferingTab> {
       case 'Sabata Mpitandrina':
         return const Color(0xFF50C878);
       default:
-        return screen.primaryColor;
+        return screen.vibrantPurple; // Remplacement de primaryColor
     }
   }
 
@@ -220,9 +218,7 @@ class _OfferingTabState extends State<OfferingTab> {
                   ),
                 );
               }).toList(),
-              const SizedBox(
-                  height:
-                      56), // Espace pour éviter que le contenu ne soit masqué par le bouton flottant
+              const SizedBox(height: 56),
             ],
           ),
         ),

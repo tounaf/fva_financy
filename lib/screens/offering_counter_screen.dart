@@ -5,11 +5,13 @@ import '../models/offering_data.dart';
 import '../utils/constants.dart';
 import 'expense_screen.dart';
 
-const Color primaryColor = Color(0xFF4A90E2);
-const Color accentColor = Color(0xFF50C878);
-const Color backgroundColor = Color(0xFFF5F7FA);
-const Color categoryFColor = Color(0xFF4A90E2);
-const Color categoryAColor = Color(0xFF50C878);
+// Couleurs impressionnantes
+const Color vibrantPurple = Color.fromRGBO(156, 24, 196, 1); // Violet vibrant
+const Color neonGreen = Color.fromRGBO(57, 255, 20, 1); // Vert néon
+const Color deepOrange = Color.fromRGBO(255, 87, 34, 1); // Orange profond
+const Color backgroundColor = Color(0xFFF5F7FA); // Fond léger (inchangé)
+const Color expenseRed =
+    Color.fromRGBO(255, 51, 102, 1); // Rouge vif pour les dépenses
 
 class OfferingCounterScreen extends StatefulWidget {
   const OfferingCounterScreen({super.key});
@@ -22,7 +24,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late OfferingData offeringData;
-  bool _isLoading = true; // Indicateur de chargement
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -34,9 +36,9 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
   }
 
   Future<void> _initializeData() async {
-    await offeringData.loadData(); // Charger les données sauvegardées
+    await offeringData.loadData();
     setState(() {
-      _isLoading = false; // Mise à jour de l’interface une fois chargé
+      _isLoading = false;
     });
   }
 
@@ -68,11 +70,11 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: vibrantPurple,
         title: const Text(
           'Fanisam-bola sy depanse isan-tsabata',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 22, // Légèrement réduit
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -89,7 +91,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0), // Réduit de 16.0 à 12.0
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +99,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10), // Réduit de 12 à 10
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.3),
@@ -108,45 +110,45 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(12.0), // Réduit de 16.0 à 12.0
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Totals by Category:',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18, // Réduit de 20 à 18
                         fontWeight: FontWeight.bold,
-                        color: primaryColor,
+                        color: vibrantPurple,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8), // Réduit de 12 à 8
                     _buildCategoryTile(
                       'Vola miditra F',
                       formatAmount(categoryTotals['Vola miditra F']!),
-                      categoryFColor,
+                      neonGreen,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6), // Réduit de 8 à 6
                     _buildCategoryTile(
                       'Vola miditra A',
                       formatAmount(categoryTotals['Vola miditra A']!),
-                      categoryAColor,
+                      deepOrange,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6), // Réduit de 8 à 6
                     _buildCategoryTile(
                       'Total Expenses',
                       formatAmount(offeringData.getTotalExpenses()),
-                      Colors.red,
+                      expenseRed,
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12), // Réduit de 16 à 12
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8), // Réduit de 10 à 8
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.3),
@@ -156,22 +158,22 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10), // Réduit de 12 à 10
               child: Text(
                 'Grand Total: ${formatAmount(calculateGrandTotal())}',
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: 20, // Réduit de 24 à 20
                   fontWeight: FontWeight.bold,
-                  color: primaryColor,
+                  color: vibrantPurple,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12), // Réduit de 16 à 12
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  color: primaryColor,
+                  color: vibrantPurple,
                   child: TabBar(
                     controller: _tabController,
                     isScrollable: true,
@@ -283,9 +285,10 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
 
   Widget _buildCategoryTile(String category, String amount, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      padding: const EdgeInsets.symmetric(
+          vertical: 8, horizontal: 10), // Réduit de 10/12 à 8/10
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6), // Réduit de 8 à 6
         border: Border.all(color: color.withOpacity(0.3), width: 1),
         color: color.withOpacity(0.1),
       ),
@@ -295,7 +298,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
           Text(
             category,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14, // Réduit de 16 à 14
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -303,7 +306,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
           Text(
             amount,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 14, // Réduit de 16 à 14
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
