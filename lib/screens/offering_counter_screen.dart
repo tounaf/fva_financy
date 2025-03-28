@@ -4,14 +4,13 @@ import '../widgets/offering_tab.dart';
 import '../models/offering_data.dart';
 import '../utils/constants.dart';
 import 'expense_screen.dart';
+import 'vola_sisa_screen.dart';
 
-// Couleurs impressionnantes
-const Color vibrantPurple = Color.fromRGBO(156, 24, 196, 1); // Violet vibrant
-const Color neonGreen = Color.fromRGBO(57, 255, 20, 1); // Vert néon
-const Color deepOrange = Color.fromRGBO(255, 87, 34, 1); // Orange profond
-const Color backgroundColor = Color(0xFFF5F7FA); // Fond léger (inchangé)
-const Color expenseRed =
-    Color.fromRGBO(255, 51, 102, 1); // Rouge vif pour les dépenses
+const Color vibrantPurple = Color.fromRGBO(156, 24, 196, 1);
+const Color neonGreen = Color.fromRGBO(57, 255, 20, 1);
+const Color deepOrange = Color.fromRGBO(255, 87, 34, 1);
+const Color backgroundColor = Color(0xFFF5F7FA);
+const Color expenseRed = Color.fromRGBO(255, 51, 102, 1);
 
 class OfferingCounterScreen extends StatefulWidget {
   const OfferingCounterScreen({super.key});
@@ -30,7 +29,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
   void initState() {
     super.initState();
     _tabController =
-        TabController(length: offeringTypes.length + 1, vsync: this);
+        TabController(length: offeringTypes.length + 2, vsync: this);
     offeringData = OfferingData();
     _initializeData();
   }
@@ -74,7 +73,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
         title: const Text(
           'Fanisam-bola sy depanse isan-tsabata',
           style: TextStyle(
-            fontSize: 22, // Légèrement réduit
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -91,7 +90,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12.0), // Réduit de 16.0 à 12.0
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +98,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(10), // Réduit de 12 à 10
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.3),
@@ -110,31 +109,31 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(12.0), // Réduit de 16.0 à 12.0
+                padding: const EdgeInsets.all(12.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Totals by Category:',
                       style: TextStyle(
-                        fontSize: 18, // Réduit de 20 à 18
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: vibrantPurple,
                       ),
                     ),
-                    const SizedBox(height: 8), // Réduit de 12 à 8
+                    const SizedBox(height: 8),
                     _buildCategoryTile(
                       'Vola miditra F',
                       formatAmount(categoryTotals['Vola miditra F']!),
                       neonGreen,
                     ),
-                    const SizedBox(height: 6), // Réduit de 8 à 6
+                    const SizedBox(height: 6),
                     _buildCategoryTile(
                       'Vola miditra A',
                       formatAmount(categoryTotals['Vola miditra A']!),
                       deepOrange,
                     ),
-                    const SizedBox(height: 6), // Réduit de 8 à 6
+                    const SizedBox(height: 6),
                     _buildCategoryTile(
                       'Total Expenses',
                       formatAmount(offeringData.getTotalExpenses()),
@@ -144,11 +143,11 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 12), // Réduit de 16 à 12
+            const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8), // Réduit de 10 à 8
+                borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.3),
@@ -158,17 +157,17 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(10), // Réduit de 12 à 10
+              padding: const EdgeInsets.all(10),
               child: Text(
                 'Grand Total: ${formatAmount(calculateGrandTotal())}',
                 style: const TextStyle(
-                  fontSize: 20, // Réduit de 24 à 20
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: vibrantPurple,
                 ),
               ),
             ),
-            const SizedBox(height: 12), // Réduit de 16 à 12
+            const SizedBox(height: 12),
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -242,6 +241,28 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                           ],
                         ),
                       ),
+                      Tab(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Vola Sisa',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              formatAmount(
+                                  offeringData.getVolaSisaEoAntanana()),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -272,6 +293,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                         );
                       }).toList(),
                       ExpenseScreen(offeringData: offeringData),
+                      VolaSisaScreen(offeringData: offeringData),
                     ],
                   ),
                 ),
@@ -285,10 +307,9 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
 
   Widget _buildCategoryTile(String category, String amount, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-          vertical: 8, horizontal: 10), // Réduit de 10/12 à 8/10
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6), // Réduit de 8 à 6
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
         color: color.withOpacity(0.1),
       ),
@@ -298,7 +319,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
           Text(
             category,
             style: TextStyle(
-              fontSize: 14, // Réduit de 16 à 14
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -306,7 +327,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
           Text(
             amount,
             style: const TextStyle(
-              fontSize: 14, // Réduit de 16 à 14
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),

@@ -6,16 +6,18 @@ class OfferingData {
   Map<String, Map<int, int>> quantities = {};
   Map<String, bool> completionStatus = {};
   final ExpenseData expenseData = ExpenseData();
+  double ambimbolaTeoAloha = 0.0;
+  double volaMiditraAndroany = 0.0; // Nouveau champ modifiable
+  double volaNivoaka = 0.0; // Nouveau champ modifiable
 
   OfferingData() {
     for (var offering in offeringTypes) {
       quantities[offering] = {for (var bill in billTypes) bill: 0};
       completionStatus[offering] = false;
     }
-    loadData(); // Charger les données au démarrage
+    loadData();
   }
 
-  // Charger les données depuis SharedPreferences
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
     for (var offering in offeringTypes) {
@@ -25,10 +27,13 @@ class OfferingData {
       completionStatus[offering] =
           prefs.getBool('$offering-completed') ?? false;
     }
-    await expenseData.loadExpenses(); // Charger les dépenses
+    ambimbolaTeoAloha = prefs.getDouble('ambimbola_teo_aloha') ?? 0.0;
+    volaMiditraAndroany = prefs.getDouble('vola_miditra_androany') ??
+        calculateVolaMiditraF(); // Valeur initiale
+    volaNivoaka = prefs.getDouble('vola_nivoaka') ?? 0.0;
+    await expenseData.loadExpenses();
   }
 
-  // Sauvegarder les données dans SharedPreferences (uniquement les offrandes)
   Future<void> _saveData() async {
     final prefs = await SharedPreferences.getInstance();
     for (var offering in offeringTypes) {
@@ -37,17 +42,35 @@ class OfferingData {
       }
       await prefs.setBool('$offering-completed', completionStatus[offering]!);
     }
-    // Pas besoin d'appeler _saveExpenses ici, car les dépenses sont gérées séparément
+    await prefs.setDouble('ambimbola_teo_aloha', ambimbolaTeoAloha);
+    await prefs.setDouble('vola_miditra_androany', volaMiditraAndroany);
+    await prefs.setDouble('vola_nivoaka', volaNivoaka);
+    await expenseData.saveExpenses();
   }
 
   void updateQuantity(String offering, int bill, int count) {
     quantities[offering]![bill] = count;
-    _saveData(); // Sauvegarder après mise à jour
+    _saveData();
   }
 
   void toggleCompletion(String offering) {
     completionStatus[offering] = !(completionStatus[offering] ?? false);
-    _saveData(); // Sauvegarder après bascule
+    _saveData();
+  }
+
+  void updateAmbimbolaTeoAloha(double value) {
+    ambimbolaTeoAloha = value;
+    _saveData();
+  }
+
+  void updateVolaMiditraAndroany(double value) {
+    volaMiditraAndroany = value;
+    _saveData();
+  }
+
+  void updateVolaNivoaka(double value) {
+    volaNivoaka = value;
+    _saveData();
   }
 
   double calculateTotalForOffering(String offering) {
@@ -86,16 +109,39 @@ class OfferingData {
     return expenseData.calculateTotalExpenses();
   }
 
-  // Réinitialiser toutes les données
+  // Nouvelle méthode pour "Vola miditra F"
+  double calculateVolaMiditraF() {
+    Map<String, double> totals = calculateTotalsByCategory();
+    return totals['Vola miditra F'] ?? 0.0;
+  }
+
+  double getVolaMiditraAndroany() {
+    return volaMiditraAndroany; // Valeur modifiable
+  }
+
+  double getFitambaranIreo() {
+    return ambimbolaTeoAloha + getVolaMiditraAndroany();
+  }
+
+  double getVolaNivoaka() {
+    return volaNivoaka; // Valeur modifiable
+  }
+
+  double getVolaSisaEoAntanana() {
+    return getFitambaranIreo() - getVolaNivoaka();
+  }
+
   Future<void> resetData() async {
     quantities = {
       for (var offering in offeringTypes)
         offering: {for (var bill in billTypes) bill: 0}
     };
     completionStatus = {for (var offering in offeringTypes) offering: false};
+    ambimbolaTeoAloha = 0.0;
+    volaMiditraAndroany =
+        calculateVolaMiditraF(); // Réinitialise à Vola miditra F
+    volaNivoaka = 0.0;
     expenseData.expenses = [];
     await _saveData();
-    await expenseData
-        .saveExpenses(); // Sauvegarder les dépenses après réinitialisation
   }
 }
