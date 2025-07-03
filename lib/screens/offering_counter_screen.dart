@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fva_financy/screens/sync_screen.dart';
 import 'package:intl/intl.dart';
 import '../widgets/offering_tab.dart';
 import '../models/offering_data.dart';
@@ -88,6 +89,59 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             tooltip: 'Réinitialiser',
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: vibrantPurple,
+              ),
+              child: Text(
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.sync),
+              title: const Text('Synchronisation'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SyncScreen(offeringData: offeringData),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {
+                // Placeholder for Settings screen
+                Navigator.pop(context); // Close the drawer
+                // Add navigation to a Settings screen if you have one
+                // Example: Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text('About'),
+              onTap: () {
+                // Placeholder for About screen
+                Navigator.pop(context); // Close the drawer
+                // Add navigation to an About screen if you have one
+                // Example: Navigator.push(context, MaterialPageRoute(builder: (context) => AboutScreen()));
+              },
+            ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12.0),
