@@ -15,7 +15,7 @@ class SyncScreen extends StatefulWidget {
 }
 
 class _SyncScreenState extends State<SyncScreen> {
-  final String apiUrl = 'http://your-api-url/api/offerings'; // Replace with your Symfony API URL
+  final String apiUrl = 'http://localhost:8000/api/offerings'; // Replace with your Symfony API URL
   Map<String, bool> syncStatus = {}; // Track sync status for each offering
 
   @override
