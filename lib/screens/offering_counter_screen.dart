@@ -80,7 +80,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.blueAccent,),
             onPressed: () async {
               await offeringData.resetData();
               setState(() {});
