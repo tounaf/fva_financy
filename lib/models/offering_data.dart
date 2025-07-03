@@ -93,6 +93,7 @@ class OfferingData {
     Map<String, double> categoryTotals = {
       'Vola miditra F': 0.0,
       'Vola miditra A': 0.0,
+      'Autre': 0.0,
     };
 
     for (var offering in offeringTypes) {

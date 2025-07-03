@@ -8,6 +8,8 @@ const List<String> offeringTypes = [
   'ARIVA',
   'Tapabolana',
   'Sabata Mpitandrina',
+  'Radio',
+  'Hetsika manokana'
 ];
 
 const List<int> billTypes = [
@@ -32,4 +34,6 @@ const Map<String, String> offeringCategories = {
   // 'Maitso': 'Vola miditra A',
   'Tapabolana': 'Vola miditra A',
   'Sabata Mpitandrina': 'Vola miditra A',
+  'Radio': 'Autre',
+  'Hetsika manokana': 'Autre',
 };
