@@ -16,16 +16,6 @@ class SyncScreen extends StatefulWidget {
 
 class _SyncScreenState extends State<SyncScreen> {
   final String apiUrl = 'http://localhost:8000/api/offerings'; // Replace with your Symfony API URL
-  Map<String, bool> syncStatus = {}; // Track sync status for each offering
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize sync status for each offering
-    for (var offering in offeringTypes) {
-      syncStatus[offering] = false;
-    }
-  }
 
   Future<void> sendOfferingToApi(String offering) async {
     final quantities = widget.offeringData.quantities[offering]!;
@@ -36,6 +26,7 @@ class _SyncScreenState extends State<SyncScreen> {
       'quantities': quantities.map((bill, count) => MapEntry(bill.toString(), count)),
       'total': total,
     };
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -57,6 +48,7 @@ class _SyncScreenState extends State<SyncScreen> {
     if (confirm != true) {
       return;
     }
+
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -66,7 +58,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         setState(() {
-          syncStatus[offering] = true;
+          widget.offeringData.updateSyncStatus(offering, true); // Persist sync status
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$offering synchronisé avec succès')),
@@ -104,7 +96,7 @@ class _SyncScreenState extends State<SyncScreen> {
           final offering = offeringTypes[index];
           final quantities = widget.offeringData.quantities[offering]!;
           final total = widget.offeringData.calculateTotalForOffering(offering);
-          final isSynced = syncStatus[offering] ?? false;
+          final isSynced = widget.offeringData.syncStatus[offering] ?? false;
 
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 8.0),

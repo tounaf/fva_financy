@@ -5,15 +5,17 @@ import 'expense.dart';
 class OfferingData {
   Map<String, Map<int, int>> quantities = {};
   Map<String, bool> completionStatus = {};
+  Map<String, bool> syncStatus = {}; // Nouveau champ pour l'état de synchronisation
   final ExpenseData expenseData = ExpenseData();
   double ambimbolaTeoAloha = 0.0;
-  double volaMiditraAndroany = 0.0; // Nouveau champ modifiable
-  double volaNivoaka = 0.0; // Nouveau champ modifiable
+  double volaMiditraAndroany = 0.0;
+  double volaNivoaka = 0.0;
 
   OfferingData() {
     for (var offering in offeringTypes) {
       quantities[offering] = {for (var bill in billTypes) bill: 0};
       completionStatus[offering] = false;
+      syncStatus[offering] = false; // Initialisation
     }
     loadData();
   }
@@ -24,12 +26,12 @@ class OfferingData {
       for (var bill in billTypes) {
         quantities[offering]![bill] = prefs.getInt('$offering-$bill') ?? 0;
       }
-      completionStatus[offering] =
-          prefs.getBool('$offering-completed') ?? false;
+      completionStatus[offering] = prefs.getBool('$offering-completed') ?? false;
+      syncStatus[offering] = prefs.getBool('$offering-synced') ?? false; // Chargement
     }
     ambimbolaTeoAloha = prefs.getDouble('ambimbola_teo_aloha') ?? 0.0;
     volaMiditraAndroany = prefs.getDouble('vola_miditra_androany') ??
-        calculateVolaMiditraF(); // Valeur initiale
+        calculateVolaMiditraF();
     volaNivoaka = prefs.getDouble('vola_nivoaka') ?? 0.0;
     await expenseData.loadExpenses();
   }
@@ -41,6 +43,7 @@ class OfferingData {
         await prefs.setInt('$offering-$bill', quantities[offering]![bill]!);
       }
       await prefs.setBool('$offering-completed', completionStatus[offering]!);
+      await prefs.setBool('$offering-synced', syncStatus[offering]!); // Sauvegarde
     }
     await prefs.setDouble('ambimbola_teo_aloha', ambimbolaTeoAloha);
     await prefs.setDouble('vola_miditra_androany', volaMiditraAndroany);
@@ -55,6 +58,11 @@ class OfferingData {
 
   void toggleCompletion(String offering) {
     completionStatus[offering] = !(completionStatus[offering] ?? false);
+    _saveData();
+  }
+
+  void updateSyncStatus(String offering, bool status) {
+    syncStatus[offering] = status;
     _saveData();
   }
 
@@ -99,8 +107,7 @@ class OfferingData {
     for (var offering in offeringTypes) {
       String category = offeringCategories[offering]!;
       double offeringTotal = calculateTotalForOffering(offering);
-      categoryTotals[category] =
-          (categoryTotals[category] ?? 0) + offeringTotal;
+      categoryTotals[category] = (categoryTotals[category] ?? 0) + offeringTotal;
     }
 
     return categoryTotals;
@@ -110,14 +117,13 @@ class OfferingData {
     return expenseData.calculateTotalExpenses();
   }
 
-  // Nouvelle méthode pour "Vola miditra F"
   double calculateVolaMiditraF() {
     Map<String, double> totals = calculateTotalsByCategory();
     return totals['Vola miditra F'] ?? 0.0;
   }
 
   double getVolaMiditraAndroany() {
-    return volaMiditraAndroany; // Valeur modifiable
+    return volaMiditraAndroany;
   }
 
   double getFitambaranIreo() {
@@ -125,7 +131,7 @@ class OfferingData {
   }
 
   double getVolaNivoaka() {
-    return volaNivoaka; // Valeur modifiable
+    return volaNivoaka;
   }
 
   double getVolaSisaEoAntanana() {
@@ -138,9 +144,9 @@ class OfferingData {
         offering: {for (var bill in billTypes) bill: 0}
     };
     completionStatus = {for (var offering in offeringTypes) offering: false};
+    syncStatus = {for (var offering in offeringTypes) offering: false}; // Réinitialisation
     ambimbolaTeoAloha = 0.0;
-    volaMiditraAndroany =
-        calculateVolaMiditraF(); // Réinitialise à Vola miditra F
+    volaMiditraAndroany = calculateVolaMiditraF();
     volaNivoaka = 0.0;
     expenseData.expenses = [];
     await _saveData();

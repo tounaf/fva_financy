@@ -77,6 +77,16 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.blueAccent,),
+            onPressed: () async {
+              await offeringData.resetData();
+              setState(() {});
+            },
+            tooltip: 'Réinitialiser',
+          )
+        ]
       ),
       body: Column(
         children: [
