@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'offering_counter_screen.dart';
 
 class FiangonanaSelectionScreen extends StatefulWidget {
@@ -53,10 +54,11 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
         Uri.parse('http://localhost:8000/api/fiangonanas?code=$code'),
         headers: {'Content-Type': 'application/json'},
       );
-
+      
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final fiangonanas = data['hydra:member'] as List<dynamic>;
+        final fiangonanas = data as List<dynamic>;
+        
         if (fiangonanas.isNotEmpty) {
           final fiangonana = fiangonanas[0];
           final prefs = await SharedPreferences.getInstance();
@@ -88,39 +90,103 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = const Color(0xFF3F51B5); // Indigo
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sélectionner Fiangonana'),
-        backgroundColor: const Color.fromRGBO(156, 24, 196, 1), // vibrantPurple
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: _codeController,
-              decoration: InputDecoration(
-                labelText: 'Code Fiangonana',
-                border: const OutlineInputBorder(),
-                errorText: _errorMessage,
-              ),
-              onSubmitted: (_) => _validateFiangonanaCode(),
-            ),
-            const SizedBox(height: 16),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _validateFiangonanaCode,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromRGBO(156, 24, 196, 1), // vibrantPurple
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Valider'),
+            // Header with wave
+            ClipPath(
+              clipper: WaveClipper(),
+              child: Container(
+                height: 250,
+                color: primaryColor,
+                alignment: Alignment.center,
+                child: Text(
+                  'Connexion Fiangonana',
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                children: [
+                  // Code input
+                  TextField(
+                    controller: _codeController,
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.vpn_key_outlined),
+                      hintText: 'Code Fiangonana',
+                      errorText: _errorMessage,
+                      hintStyle: GoogleFonts.poppins(),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onSubmitted: (_) => _validateFiangonanaCode(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Validate Button
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _validateFiangonanaCode,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Valider',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+// Wavy header clipper
+class WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 50);
+    path.quadraticBezierTo(
+      size.width / 2, size.height,
+      size.width, size.height - 50,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

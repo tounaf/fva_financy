@@ -36,7 +36,27 @@ class _SyncScreenState extends State<SyncScreen> {
       'quantities': quantities.map((bill, count) => MapEntry(bill.toString(), count)),
       'total': total,
     };
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmation'),
+        content: Text('Voulez-vous vraiment synchroniser l\'offrande "$offering" ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
 
+    if (confirm != true) {
+      return;
+    }
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
