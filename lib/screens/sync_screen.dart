@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/offering_data.dart';
 import '../utils/constants.dart';
 import 'dart:convert';
@@ -20,11 +21,21 @@ class _SyncScreenState extends State<SyncScreen> {
   Future<void> sendOfferingToApi(String offering) async {
     final quantities = widget.offeringData.quantities[offering]!;
     final total = widget.offeringData.calculateTotalForOffering(offering);
+    final prefs = await SharedPreferences.getInstance();
+    final fiangonanaId = prefs.getInt('fiangonana_id');
+
+    if (fiangonanaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erreur : ID de fiangonana non trouvé')),
+      );
+      return;
+    }
 
     final data = {
       'type': offering,
       'quantities': quantities.map((bill, count) => MapEntry(bill.toString(), count)),
       'total': total,
+      'fiangonana': "/api/fiangonanas/$fiangonanaId"
     };
 
     final confirm = await showDialog<bool>(
