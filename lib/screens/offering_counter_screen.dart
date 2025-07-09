@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:fva_financy/screens/fiangonana_selection_screen.dart';
 import 'package:fva_financy/screens/sync_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/offering_tab.dart';
 import '../models/offering_data.dart';
 import '../utils/constants.dart';
@@ -57,6 +59,16 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
 
   String formatAmount(double amount) {
     return NumberFormat.currency(locale: 'fr_FR', symbol: ' Ar').format(amount);
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('fiangonana_id');
+    await prefs.remove('fiangonana_nom');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const FiangonanaSelectionScreen()), // Assurez-vous que cet écran existe
+    );
   }
 
   @override
@@ -162,6 +174,33 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             leading: const Icon(Icons.info_outline),
             title: const Text('À propos'),
             onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Déconnexion'),
+            onTap: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Confirmation'),
+                  content: const Text('Voulez-vous vraiment vous déconnecter ?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Annuler'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Confirmer'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                await _logout();
+              }
+            },
           ),
         ],
       ),
