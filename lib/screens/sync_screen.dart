@@ -16,9 +16,14 @@ class SyncScreen extends StatefulWidget {
 }
 
 class _SyncScreenState extends State<SyncScreen> {
-  final String apiUrl = 'http://localhost:8000/api/offerings'; // Replace with your Symfony API URL
+  final String apiUrl = 'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/offerings';
+  final Map<String, bool> _isLoading = {}; // Track loading state for each offering
 
   Future<void> sendOfferingToApi(String offering) async {
+    setState(() {
+      _isLoading[offering] = true; // Start loading
+    });
+
     final quantities = widget.offeringData.quantities[offering]!;
     final total = widget.offeringData.calculateTotalForOffering(offering);
     final prefs = await SharedPreferences.getInstance();
@@ -28,6 +33,9 @@ class _SyncScreenState extends State<SyncScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erreur : ID de fiangonana non trouvé')),
       );
+      setState(() {
+        _isLoading[offering] = false; // Stop loading
+      });
       return;
     }
 
@@ -57,6 +65,9 @@ class _SyncScreenState extends State<SyncScreen> {
     );
 
     if (confirm != true) {
+      setState(() {
+        _isLoading[offering] = false; // Stop loading
+      });
       return;
     }
 
@@ -70,16 +81,23 @@ class _SyncScreenState extends State<SyncScreen> {
       if (response.statusCode == 201 || response.statusCode == 200) {
         setState(() {
           widget.offeringData.updateSyncStatus(offering, true); // Persist sync status
+          _isLoading[offering] = false; // Stop loading
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$offering synchronisé avec succès')),
         );
       } else {
+        setState(() {
+          _isLoading[offering] = false; // Stop loading
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur lors de la synchronisation de $offering')),
         );
       }
     } catch (e) {
+      setState(() {
+        _isLoading[offering] = false; // Stop loading
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur réseau : $e')),
       );
@@ -108,6 +126,7 @@ class _SyncScreenState extends State<SyncScreen> {
           final quantities = widget.offeringData.quantities[offering]!;
           final total = widget.offeringData.calculateTotalForOffering(offering);
           final isSynced = widget.offeringData.syncStatus[offering] ?? false;
+          final isLoading = _isLoading[offering] ?? false;
 
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -152,13 +171,22 @@ class _SyncScreenState extends State<SyncScreen> {
                       .toList(),
                   const SizedBox(height: 8),
                   ElevatedButton.icon(
-                    onPressed: isSynced
+                    onPressed: isSynced || isLoading
                         ? null
                         : () async {
                             await sendOfferingToApi(offering);
                           },
-                    icon: Icon(isSynced ? Icons.check_circle : Icons.sync),
-                    label: Text(isSynced ? 'Synchronisé' : 'Synchroniser'),
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Icon(isSynced ? Icons.check_circle : Icons.sync),
+                    label: Text(isSynced ? 'Synchronisé' : isLoading ? 'Synchronisation...' : 'Synchroniser'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isSynced
                           ? Colors.grey

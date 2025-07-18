@@ -51,7 +51,7 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/fiangonanas?code=$code'),
+        Uri.parse('https://fva-vitaonyasany.mg/admin-api/public/index.php/api/fiangonanas?code=$code'),
         headers: {'Content-Type': 'application/json'},
       );
       

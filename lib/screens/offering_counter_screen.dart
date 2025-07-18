@@ -268,17 +268,27 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
               tabs: [
                 ...offeringTypes.map((type) {
                   double total = offeringData.calculateTotalForOffering(type);
-                  return Tab(
-                    child: Column(
-                      children: [
-                        Text(type),
-                        Text(
-                          formatAmount(total),
-                          style: GoogleFonts.poppins(fontSize: 12, color: Colors.white70),
-                        )
-                      ],
-                    ),
-                  );
+                  return   Tab(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Column(
+                                  children: [
+                                    Text(type),
+                                    Text(
+                                      formatAmount(total),
+                                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.white70),
+                                    ),
+                                  ],
+                                ),
+                                if (offeringData.completionStatus[type]!) 
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 4),
+                                    child: Icon(Icons.check_circle, size: 16, color: Colors.white),
+                                  ),
+                              ],
+                            ),
+                          );
                 }).toList(),
                 const Tab(child: Text('Dépenses')),
                 const Tab(child: Text('Vola Sisa')),
