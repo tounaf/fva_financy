@@ -5,7 +5,8 @@ import 'expense.dart';
 class OfferingData {
   Map<String, Map<int, int>> quantities = {};
   Map<String, bool> completionStatus = {};
-  Map<String, bool> syncStatus = {}; // Nouveau champ pour l'état de synchronisation
+  Map<String, bool> syncStatus = {};
+  bool expensesSyncStatus = false; // Nouveau champ pour l'état de synchronisation des dépenses
   final ExpenseData expenseData = ExpenseData();
   double ambimbolaTeoAloha = 0.0;
   double volaMiditraAndroany = 0.0;
@@ -15,7 +16,7 @@ class OfferingData {
     for (var offering in offeringTypes) {
       quantities[offering] = {for (var bill in billTypes) bill: 0};
       completionStatus[offering] = false;
-      syncStatus[offering] = false; // Initialisation
+      syncStatus[offering] = false;
     }
     loadData();
   }
@@ -27,12 +28,13 @@ class OfferingData {
         quantities[offering]![bill] = prefs.getInt('$offering-$bill') ?? 0;
       }
       completionStatus[offering] = prefs.getBool('$offering-completed') ?? false;
-      syncStatus[offering] = prefs.getBool('$offering-synced') ?? false; // Chargement
+      syncStatus[offering] = prefs.getBool('$offering-synced') ?? false;
     }
     ambimbolaTeoAloha = prefs.getDouble('ambimbola_teo_aloha') ?? 0.0;
     volaMiditraAndroany = prefs.getDouble('vola_miditra_androany') ??
         calculateVolaMiditraF();
     volaNivoaka = prefs.getDouble('vola_nivoaka') ?? 0.0;
+    expensesSyncStatus = prefs.getBool('expenses_synced') ?? false; // Chargement de l'état de synchronisation des dépenses
     await expenseData.loadExpenses();
   }
 
@@ -43,11 +45,12 @@ class OfferingData {
         await prefs.setInt('$offering-$bill', quantities[offering]![bill]!);
       }
       await prefs.setBool('$offering-completed', completionStatus[offering]!);
-      await prefs.setBool('$offering-synced', syncStatus[offering]!); // Sauvegarde
+      await prefs.setBool('$offering-synced', syncStatus[offering]!);
     }
     await prefs.setDouble('ambimbola_teo_aloha', ambimbolaTeoAloha);
     await prefs.setDouble('vola_miditra_androany', volaMiditraAndroany);
     await prefs.setDouble('vola_nivoaka', volaNivoaka);
+    await prefs.setBool('expenses_synced', expensesSyncStatus); // Sauvegarde de l'état de synchronisation des dépenses
     await expenseData.saveExpenses();
   }
 
@@ -63,6 +66,11 @@ class OfferingData {
 
   void updateSyncStatus(String offering, bool status) {
     syncStatus[offering] = status;
+    _saveData();
+  }
+
+  void updateExpensesSyncStatus(bool status) {
+    expensesSyncStatus = status;
     _saveData();
   }
 
@@ -144,7 +152,8 @@ class OfferingData {
         offering: {for (var bill in billTypes) bill: 0}
     };
     completionStatus = {for (var offering in offeringTypes) offering: false};
-    syncStatus = {for (var offering in offeringTypes) offering: false}; // Réinitialisation
+    syncStatus = {for (var offering in offeringTypes) offering: false};
+    expensesSyncStatus = false; // Réinitialisation de l'état de synchronisation des dépenses
     ambimbolaTeoAloha = 0.0;
     volaMiditraAndroany = calculateVolaMiditraF();
     volaNivoaka = 0.0;
