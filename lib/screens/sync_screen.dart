@@ -17,8 +17,9 @@ class SyncScreen extends StatefulWidget {
 
 class _SyncScreenState extends State<SyncScreen> {
   final String offeringApiUrl = 'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/offerings';
-  // final String expenseApiUrl = 'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/expenses';
-  final String expenseApiUrl = 'http://localhost:8000/api/expenses/batch';
+  //final String offeringApiUrl = 'http://localhost:8000/api/offerings';
+  final String expenseApiUrl = 'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/expenses/batch';
+  //final String expenseApiUrl = 'http://localhost:8000/api/expenses/batch';
   final Map<String, bool> _isLoading = {};
 
   Future<void> sendOfferingToApi(String offering) async {
