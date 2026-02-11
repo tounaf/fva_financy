@@ -31,13 +31,10 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
 
   Future<void> _checkUpdate() async {
   try {
-    debugPrint("----------------------:-----------------------");
-    // 1. Récupérer les infos de la version actuelle de l'APK installé
     final packageInfo = await PackageInfo.fromPlatform();
     // Sur GitHub Actions on a mis v1.0.${github.run_number}
     // currentVersion sera par exemple "1.0.3"
     final currentVersion = packageInfo.version; 
-    debugPrint("---------------- Version ------: $currentVersion");
 
     // 2. Interroger l'API GitHub pour la dernière Release
     const String githubUser = "tounaf";
@@ -45,20 +42,16 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
     const String apiUrl = "https://api.github.com/repos/$githubUser/$githubRepo/releases/latest";
 
     final response = await http.get(Uri.parse(apiUrl));
-    print(json.decode(response.body));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final String latestVersionTag = data['tag_name']; // ex: "v1.0.5"
       final String latestVersion = latestVersionTag.replaceAll('v', ''); // devient "1.0.5"
 
-      // 3. Comparer les versions
       if (_canUpdate(currentVersion, latestVersion)) {
-        // Trouver l'URL de l'APK dans les "assets" de la release
         final List assets = data['assets'];
         final apkAsset = assets.firstWhere((asset) => asset['name'].endsWith('.apk'));
         final String downloadUrl = apkAsset['browser_download_url'];
 
-        // 4. Afficher le dialogue de mise à jour
         if (!mounted) return;
         showDialog(
           context: context,
@@ -75,7 +68,6 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
   }
 }
 
-// Logique de comparaison simple (1.0.3 vs 1.0.5)
 bool _canUpdate(String current, String latest) {
   List<int> currentParts = current.split('.').map(int.parse).toList();
   List<int> latestParts = latest.split('.').map(int.parse).toList();
