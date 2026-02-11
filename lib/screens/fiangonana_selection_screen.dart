@@ -43,7 +43,7 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
     final code = _codeController.text.trim();
     if (code.isEmpty) {
       setState(() {
-        _errorMessage = 'Veuillez entrer un code';
+        _errorMessage = 'Veuillez entrer code';
         _isLoading = false;
       });
       return;

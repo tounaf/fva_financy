@@ -49,6 +49,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
+  Future<void> _deleteExpense(int index) async {
+    await widget.offeringData.expenseData.deleteExpense(index);
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
     _labelController.dispose();
@@ -67,7 +74,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       appBar: AppBar(
         backgroundColor: screen.vibrantPurple, // Remplacement ici
         title: const Text(
-          'Expense Counter',
+          'Depense',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -88,7 +95,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   TextFormField(
                     controller: _labelController,
                     decoration: const InputDecoration(
-                      labelText: 'Expense Label',
+                      labelText: 'Depense',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
@@ -103,7 +110,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     controller: _amountController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Amount (AR)',
+                      labelText: 'Montant   (AR)',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
@@ -122,13 +129,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     children: [
                       Text(
                         _selectedDate == null
-                            ? 'Select Date'
+                            ? 'Date'
                             : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
                         style: const TextStyle(fontSize: 16),
                       ),
                       ElevatedButton(
                         onPressed: () => _selectDate(context),
-                        child: const Text('Pick Date'),
+                        child: const Text('Selectionner date depense'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               screen.vibrantPurple, // Remplacement ici
@@ -140,7 +147,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _submitExpense,
-                    child: const Text('Add Expense'),
+                    child: const Text('Valider depense'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: screen.vibrantPurple, // Remplacement ici
                       foregroundColor: Colors.white,
@@ -159,7 +166,19 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                 return ListTile(
                   title: Text(expense.label),
                   subtitle: Text('Date: ${expense.formattedDate}'),
-                  trailing: Text(expense.formattedAmount),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min, // Important pour que la Row ne prenne pas toute la largeur
+                    children: [
+                      Text(expense.formattedAmount),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          // Logique de suppression ici
+                          _deleteExpense(index);
+                        },
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -180,7 +199,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                 ),
                 padding: const EdgeInsets.all(12),
                 child: Text(
-                  'Total Expenses: ${formatAmount(widget.offeringData.getTotalExpenses())}',
+                  'Total Depense: ${formatAmount(widget.offeringData.getTotalExpenses())}',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,

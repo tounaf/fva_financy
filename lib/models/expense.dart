@@ -38,6 +38,13 @@ class ExpenseData {
     await saveExpenses(); // Sauvegarder après ajout
   }
 
+  Future<void> deleteExpense(int index) async {
+    if (index >= 0 && index < expenses.length) {
+      expenses.removeAt(index);
+      await saveExpenses(); // Sauvegarder après suppression
+    }
+  }
+
   double calculateTotalExpenses() {
     return expenses.fold(0, (total, expense) => total + expense.amount);
   }
