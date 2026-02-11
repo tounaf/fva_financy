@@ -38,7 +38,7 @@ jobs:
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=app/fva_keystore.jks" >> android/key.properties
+          echo "storeFile=fva_keystore.jks" >> android/key.properties
 
       - name: Build APK
         run: |
@@ -46,19 +46,13 @@ jobs:
           --build-name=1.0.${{ github.run_number }} \
           --build-number=${{ github.run_number }} \
           --android-skip-build-dependency-validation
-
-      # 6. Renommer l'APK pour l'artefact
-      - name: Rename and Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: fva-financy-v1.0.${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/app-release.apk
           
       - name: Rename APK file
         run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/fva-financy-v1.0.${{ github.run_number }}.apk
 
+      # 7. Upload final
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
+          name: fva-financy-v1.0.${{ github.run_number }}
           path: build/app/outputs/flutter-apk/fva-financy-v1.0.${{ github.run_number }}.apk
