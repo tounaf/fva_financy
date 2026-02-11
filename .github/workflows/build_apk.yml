@@ -28,7 +28,9 @@ jobs:
           cache: true # Active le cache automatique pour Flutter
 
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          flutter clean
+          flutter pub get
 
       - name: Decode Keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/fva_keystore.jks
