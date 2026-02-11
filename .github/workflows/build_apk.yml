@@ -56,3 +56,15 @@ jobs:
         with:
           name: fva-financy-v1.0.${{ github.run_number }}
           path: build/app/outputs/flutter-apk/fva-financy-v1.0.${{ github.run_number }}.apk
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: build/app/outputs/flutter-apk/fva-financy-v1.0.${{ github.run_number }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
