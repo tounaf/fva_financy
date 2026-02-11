@@ -10,7 +10,7 @@ import '../utils/constants.dart';
 import 'expense_screen.dart';
 import 'vola_sisa_screen.dart';
 
-const Color vibrantPurple = Color(0xFF9C18C4);
+const Color vibrantPurple = Color.fromARGB(255, 15, 27, 197);
 const Color neonGreen = Color(0xFF39FF14);
 const Color deepOrange = Color(0xFFFF5722);
 const Color backgroundColor = Color(0xFFF0F2F5);
