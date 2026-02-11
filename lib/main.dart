@@ -86,7 +86,7 @@ bool _canUpdate(String current, String latest) {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Offering Counter',
+      title: 'Fanisam-bola Fiangonana',
       theme: ThemeData(
         primarySwatch: Colors.teal,
         visualDensity: VisualDensity.adaptivePlatformDensity,
