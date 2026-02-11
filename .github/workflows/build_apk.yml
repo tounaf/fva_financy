@@ -2,7 +2,7 @@ name: Flutter Build APK
 
 on:
   push:
-    branches: [ "master" ] # Déclenche le build lors d'un push sur main
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
@@ -11,35 +11,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Récupérer le code source
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Installer Java (nécessaire pour Android)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu' # 'zulu' est très stable pour Flutter
+          distribution: 'zulu'
           java-version: '17'
 
-      # 3. Installer Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x' # Utilise la dernière version stable de la branche 3
+          flutter-version: '3.x'
           channel: 'stable'
+          cache: true # Active le cache automatique pour Flutter
 
-      # 4. Récupérer les dépendances
       - name: Install dependencies
         run: flutter pub get
 
-      # 5. Builder l'APK (Release)
-      - name: Build APK
-        run: flutter build apk --release --android-skip-build-dependency-validation
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/fva_keystore.jks
 
-      # 6. Sauvegarder l'APK en tant qu'artefact
+      - name: Create key.properties
+        run: |
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=app/fva_keystore.jks" >> android/key.properties
+
+      - name: Build APK
+        run: |
+          flutter build apk --release \
+          --build-name=1.0.${{ github.run_number }} \
+          --build-number=${{ github.run_number }} \
+          --android-skip-build-dependency-validation
+
+      # 6. Renommer l'APK pour l'artefact
+      - name: Rename and Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fva-financy-v1.0.${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          
+      - name: Rename APK file
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/fva-financy-v1.0.${{ github.run_number }}.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: release-apk
+          path: build/app/outputs/flutter-apk/fva-financy-v1.0.${{ github.run_number }}.apk
