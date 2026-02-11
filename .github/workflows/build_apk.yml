@@ -2,9 +2,9 @@ name: Flutter Build APK
 
 on:
   push:
-    branches: [ "main" ] # Déclenche le build lors d'un push sur main
+    branches: [ "master" ] # Déclenche le build lors d'un push sur main
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 jobs:
   build:
