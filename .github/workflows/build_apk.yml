@@ -35,7 +35,7 @@ jobs:
 
       # 5. Builder l'APK (Release)
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       # 6. Sauvegarder l'APK en tant qu'artefact
       - name: Upload APK
