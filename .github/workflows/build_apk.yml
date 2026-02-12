@@ -51,8 +51,6 @@ jobs:
           
       - name: Rename APK file
         run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/fva-financy-v1.0.${{ github.run_number }}.apk
-
-      # 7. Upload final
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
