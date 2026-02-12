@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fva_financy/screens/dashboard/offering_chart_screen.dart';
 import 'package:fva_financy/screens/fiangonana_selection_screen.dart';
 import 'package:fva_financy/screens/sync_screen.dart';
 import 'package:intl/intl.dart';
@@ -164,6 +165,11 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             leading: const Icon(Icons.sync),
             title: const Text('Synchronisation'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SyncScreen(offeringData: offeringData))),
+          ),
+          ListTile(
+            leading: const Icon(Icons.sync),
+            title: const Text('Compte'),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OfferingChartScreen())),
           ),
           ListTile(
             leading: const Icon(Icons.settings),
