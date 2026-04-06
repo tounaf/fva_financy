@@ -27,7 +27,7 @@ class _VolaSisaScreenState extends State<VolaSisaScreen> {
         widget.offeringData.ambimbolaTeoAloha.toString();
     _volaMiditraController.text =
         widget.offeringData.calculateVolaMiditraF().toString();
-    _volaNivoakaController.text = widget.offeringData.volaNivoaka.toString();
+    _volaNivoakaController.text = widget.offeringData.getTotalExpenses().toString();
     offeringData = OfferingData();
     _initializeData();
   }

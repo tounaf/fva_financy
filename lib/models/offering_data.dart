@@ -135,7 +135,7 @@ class OfferingData {
   }
 
   double getFitambaranIreo() {
-    return ambimbolaTeoAloha + getVolaMiditraAndroany();
+    return ambimbolaTeoAloha + calculateVolaMiditraF();
   }
 
   double getVolaNivoaka() {
@@ -143,7 +143,7 @@ class OfferingData {
   }
 
   double getVolaSisaEoAntanana() {
-    return getFitambaranIreo() - getVolaNivoaka();
+    return getFitambaranIreo() - getTotalExpenses();
   }
 
   Future<void> resetData() async {
