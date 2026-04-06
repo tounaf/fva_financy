@@ -41,6 +41,7 @@ dependencies:
   google_fonts: ^6.2.1
   package_info_plus: ^9.0.0
   ota_update: ^7.1.0
+  fl_chart: ^0.66.0
 
 flutter_icons:
   android: true
