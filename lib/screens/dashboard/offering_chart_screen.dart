@@ -19,7 +19,7 @@ class _OfferingChartScreenState extends State<OfferingChartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Rapport des Offrandes")),
+      appBar: AppBar(title: Text("Historique de Compte")),
       body: FutureBuilder<List<OfferingDataChart>>(
         future: futureOfferings,
         builder: (context, snapshot) {
