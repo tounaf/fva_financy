@@ -26,7 +26,7 @@ class _VolaSisaScreenState extends State<VolaSisaScreen> {
     _ambimbolaController.text =
         widget.offeringData.ambimbolaTeoAloha.toString();
     _volaMiditraController.text =
-        widget.offeringData.volaMiditraAndroany.toString();
+        widget.offeringData.calculateVolaMiditraF().toString();
     _volaNivoakaController.text = widget.offeringData.volaNivoaka.toString();
     offeringData = OfferingData();
     _initializeData();
@@ -38,7 +38,6 @@ class _VolaSisaScreenState extends State<VolaSisaScreen> {
       _isLoading = false;
     });
 
-    _volaMiditraController.text = offeringData.calculateGrandTotal().toString();
   }
 
   @override
@@ -98,7 +97,7 @@ class _VolaSisaScreenState extends State<VolaSisaScreen> {
                 double amount = double.tryParse(value) ?? 0.0;
                 widget.offeringData.updateVolaMiditraAndroany(amount);
                 setState(() {});
-              },
+              },  
             ),
             const SizedBox(height: 16),
             _buildSummaryTile('Fitambaran’ireo',

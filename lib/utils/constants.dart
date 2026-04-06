@@ -5,9 +5,9 @@ const List<String> offeringTypes = [
   'Mena',
   'Mavo',
   // 'Maitso',
-  'ARIVA',
-  'Tapabolana',
-  'Sabata Mpitandrina',
+  'HARIVA',
+  'Tapa-bolana',
+  'Sabatan\'ny Mpitandrina',
   'Radio',
   'Hetsika manokana'
 ];
@@ -27,13 +27,13 @@ const List<int> billTypes = [
 const Map<String, String> offeringCategories = {
   'R1': 'Vola miditra F',
   'R2': 'Vola miditra F',
-  'ARIVA': 'Vola miditra F',
+  'HARIVA': 'Vola miditra F',
   'Mena': 'Vola miditra A',
   'Manga': 'Vola miditra A',
   'Mavo': 'Vola miditra A',
   // 'Maitso': 'Vola miditra A',
-  'Tapabolana': 'Vola miditra A',
-  'Sabata Mpitandrina': 'Vola miditra A',
+  'Tapa-bolana': 'Vola miditra A',
+  'Sabatan\'ny Mpitandrina': 'Vola miditra A',
   'Radio': 'Autre',
   'Hetsika manokana': 'Autre',
 };

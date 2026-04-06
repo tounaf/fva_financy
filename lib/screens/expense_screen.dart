@@ -6,8 +6,9 @@ import '../screens/offering_counter_screen.dart' as screen;
 
 class ExpenseScreen extends StatefulWidget {
   final OfferingData offeringData;
+  final VoidCallback? onDataUpdated;
 
-  const ExpenseScreen({super.key, required this.offeringData});
+  const ExpenseScreen({super.key, required this.offeringData, this.onDataUpdated});
 
   @override
   _ExpenseScreenState createState() => _ExpenseScreenState();
@@ -41,6 +42,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         amount,
         _selectedDate!,
       );
+
+      widget.onDataUpdated?.call();
+
       setState(() {
         _labelController.clear();
         _amountController.clear();
@@ -51,6 +55,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
   Future<void> _deleteExpense(int index) async {
     await widget.offeringData.expenseData.deleteExpense(index);
+
+    widget.onDataUpdated?.call();
+
     if (mounted) {
       setState(() {});
     }
@@ -74,7 +81,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       appBar: AppBar(
         backgroundColor: screen.vibrantPurple, // Remplacement ici
         title: const Text(
-          'Depense',
+          'Dépenses',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -95,12 +102,12 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   TextFormField(
                     controller: _labelController,
                     decoration: const InputDecoration(
-                      labelText: 'Depense',
+                      labelText: 'Dépense',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter an expense label';
+                        return 'Azafady, ampidiro ny anton\'ny dépense';
                       }
                       return null;
                     },
@@ -115,10 +122,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter an amount';
+                        return 'Azafady, ampidiro ny montant';
                       }
                       if (double.tryParse(value) == null) {
-                        return 'Please enter a valid number';
+                        return 'Azafady, ampidiro montant';
                       }
                       return null;
                     },
@@ -135,7 +142,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       ),
                       ElevatedButton(
                         onPressed: () => _selectDate(context),
-                        child: const Text('Selectionner date depense'),
+                        child: const Text('Selectionner date'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               screen.vibrantPurple, // Remplacement ici
@@ -147,7 +154,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _submitExpense,
-                    child: const Text('Valider depense'),
+                    child: const Text('Valider dépenses'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: screen.vibrantPurple, // Remplacement ici
                       foregroundColor: Colors.white,
@@ -199,7 +206,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                 ),
                 padding: const EdgeInsets.all(12),
                 child: Text(
-                  'Total Depense: ${formatAmount(widget.offeringData.getTotalExpenses())}',
+                  'Total Dépenses: ${formatAmount(widget.offeringData.getTotalExpenses())}',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,

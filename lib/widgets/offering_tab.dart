@@ -82,11 +82,11 @@ class _OfferingTabState extends State<OfferingTab> {
         return const Color(0xFFFF4040);
       case 'Mavo':
         return const Color(0xFFFFD700);
-      case 'ARIVA':
+      case 'HARIVA':
         return const Color(0xFFD4A017);
-      case 'Tapabolana':
+      case 'Tapa-bolana':
         return const Color(0xFF50C878);
-      case 'Sabata Mpitandrina':
+      case 'Sabatan\'ny Mpitandrina':
         return const Color(0xFF50C878);
       default:
         return screen.vibrantPurple; // Remplacement de primaryColor

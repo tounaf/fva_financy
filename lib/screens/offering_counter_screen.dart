@@ -111,7 +111,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
               color: vibrantPurple,
               alignment: Alignment.center,
               child: Text(
-                'Fanisam-bola sy depanse isan-tsabata',
+                'Fanisam-bola sy dépenses isan-tsabata',
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -318,7 +318,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                         setState(() => offeringData.toggleCompletion(type));
                       },
                     )),
-                ExpenseScreen(offeringData: offeringData),
+                ExpenseScreen(offeringData: offeringData, onDataUpdated: () => setState(() {})),
                 VolaSisaScreen(offeringData: offeringData),
               ],
             ),
