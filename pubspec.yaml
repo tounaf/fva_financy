@@ -42,6 +42,7 @@ dependencies:
   package_info_plus: ^9.0.0
   ota_update: ^7.1.0
   fl_chart: ^0.66.0
+  image_picker: ^1.2.1
 
 flutter_icons:
   android: true

@@ -67,7 +67,7 @@ class _AutoUpdateDialogState extends State<AutoUpdateDialog> {
         ],
       ),
       actions: [
-        if (status.contains("Erreur") || status.contains("refusée"))
+        // if (status.contains("Erreur") || status.contains("refusée"))
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text("Fermer"),

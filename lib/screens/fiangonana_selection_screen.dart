@@ -107,9 +107,10 @@ bool _canUpdate(String current, String latest) {
     }
 
     try {
-      //var url = Uri.parse('http://localhost:8000/api/fiangonanas?code=$code');
+      // var url = Uri.parse('http://192.168.1.68:8000/api/fiangonanas?code=$code');
+      var url = Uri.parse('https://fva-vitaonyasany.mg/admin-api/public/index.php/api/fiangonanas?code=$code');
       final response = await http.get(
-        Uri.parse('https://fva-vitaonyasany.mg/admin-api/public/index.php/api/fiangonanas?code=$code'),
+        url,
         headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       );
       
