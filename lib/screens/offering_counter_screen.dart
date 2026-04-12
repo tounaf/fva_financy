@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fva_financy/screens/dashboard/offering_chart_screen.dart';
 import 'package:fva_financy/screens/fiangonana_selection_screen.dart';
+import 'package:fva_financy/screens/sabbat_averser_screen.dart';
 import 'package:fva_financy/screens/sync_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -166,6 +167,19 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             title: const Text('Synchronisation'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SyncScreen(offeringData: offeringData))),
           ),
+
+          ListTile(
+            leading: const Icon(Icons.account_balance_wallet, color: Colors.green),
+            title: const Text('Faire un Versement'),
+            onTap: () {
+              Navigator.pop(context); // Ferme le drawer
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (_) => const SabbatAverserScreen())
+              );
+            },
+          ),
+
           ListTile(
             leading: const Icon(Icons.sync),
             title: const Text('Compte'),

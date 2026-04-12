@@ -63,7 +63,11 @@ class _SyncScreenState extends State<SyncScreen> {
       final data = {
         'imageName': base64Image,
         'dateSabbat': DateFormat('yyyy-MM-dd').format(DateTime.now()),
-        'fiangonana': "/api/fiangonanas/$fiangonanaId"
+        'fiangonana': "/api/fiangonanas/$fiangonanaId",
+        'ambimbolaTeoAloha': widget.offeringData.ambimbolaTeoAloha,
+        'volaMiditraAndroany': widget.offeringData.volaMiditraAndroany,
+        'volaNivoaka': widget.offeringData.volaNivoaka,
+        'volaSisaEoAntanana': widget.offeringData.getVolaSisaEoAntanana(),
       };
 
       final response = await http.post(
