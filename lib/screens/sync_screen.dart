@@ -66,7 +66,7 @@ class _SyncScreenState extends State<SyncScreen> {
         'fiangonana': "/api/fiangonanas/$fiangonanaId",
         'ambimbolaTeoAloha': widget.offeringData.ambimbolaTeoAloha,
         'volaMiditraAndroany': widget.offeringData.getFitambaranIreo(),
-        'volaNivoaka': widget.offeringData.volaNivoaka,
+        'volaNivoaka': widget.offeringData.getTotalExpenses(),
         'volaSisaEoAntanana': widget.offeringData.getVolaSisaEoAntanana(),
         'volaMiditraA': widget.offeringData.calculateVolaMiditraA(),
         'caution': 10000,
