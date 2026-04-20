@@ -65,9 +65,11 @@ class _SyncScreenState extends State<SyncScreen> {
         'dateSabbat': DateFormat('yyyy-MM-dd').format(DateTime.now()),
         'fiangonana': "/api/fiangonanas/$fiangonanaId",
         'ambimbolaTeoAloha': widget.offeringData.ambimbolaTeoAloha,
-        'volaMiditraAndroany': widget.offeringData.volaMiditraAndroany,
+        'volaMiditraAndroany': widget.offeringData.getFitambaranIreo(),
         'volaNivoaka': widget.offeringData.volaNivoaka,
         'volaSisaEoAntanana': widget.offeringData.getVolaSisaEoAntanana(),
+        'volaMiditraA': widget.offeringData.calculateVolaMiditraA(),
+        'caution': 10000,
       };
 
       final response = await http.post(
@@ -303,8 +305,41 @@ class _SyncScreenState extends State<SyncScreen> {
       child: Column(
         children: [
           const Text("FINALISATION DU SABBAT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 10),
-          if (_bordereauImage != null) 
+          const SizedBox(height: 16),
+
+          // ── Résumé financier ──
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color.fromRGBO(156, 24, 196, 1), width: 1),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Résumé", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromRGBO(156, 24, 196, 1))),
+                const Divider(),
+                _buildSummaryRow("Ambimbola teo aloha", widget.offeringData.ambimbolaTeoAloha),
+                _buildSummaryRow("Vola miditra androany", widget.offeringData.getFitambaranIreo()),
+                _buildSummaryRow("Vola nivoaka", widget.offeringData.volaNivoaka, isExpense: true),
+                const Divider(),
+                _buildSummaryRow("Total", widget.offeringData.getVolaSisaEoAntanana(), isTotal: true),
+                const Divider(),
+                const Text("Net à verser", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromRGBO(156, 24, 196, 1))),
+                _buildSummaryRow("Caution", 10000),
+                _buildSummaryRow("Vola miditra A", widget.offeringData.calculateVolaMiditraA()),
+                const Divider(),
+                _buildSummaryRow("A verser", widget.offeringData.calculateVolaMiditraA() + 10000, isTotal: true),
+
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Photo bordereau ──
+          if (_bordereauImage != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Image.file(_bordereauImage!, height: 150),
@@ -321,9 +356,42 @@ class _SyncScreenState extends State<SyncScreen> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
               onPressed: _isFinalizing ? null : finalizeSabbat,
-              child: _isFinalizing 
-                ? const CircularProgressIndicator(color: Colors.white) 
-                : const Text("VALIDER ET FERMER LE SABBAT", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: _isFinalizing
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text("VALIDER ET FERMER LE SABBAT", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, double amount, {bool isExpense = false, bool isTotal = false}) {
+    final color = isTotal
+        ? const Color.fromRGBO(156, 24, 196, 1)
+        : isExpense
+            ? Colors.red[700]
+            : Colors.black87;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 14 : 13,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color: color,
+            ),
+          ),
+          Text(
+            formatAmount(amount),
+            style: TextStyle(
+              fontSize: isTotal ? 14 : 13,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              color: color,
             ),
           ),
         ],

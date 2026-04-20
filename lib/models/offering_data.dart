@@ -130,6 +130,11 @@ class OfferingData {
     return totals['Vola miditra F'] ?? 0.0;
   }
 
+  double calculateVolaMiditraA() {
+    Map<String, double> totals = calculateTotalsByCategory();
+    return totals['Vola miditra A'] ?? 0.0;
+  }
+
   double getVolaMiditraAndroany() {
     return volaMiditraAndroany;
   }
