@@ -323,7 +323,7 @@ class _SyncScreenState extends State<SyncScreen> {
                 const Divider(),
                 _buildSummaryRow("Ambimbola teo aloha", widget.offeringData.ambimbolaTeoAloha),
                 _buildSummaryRow("Vola miditra androany", widget.offeringData.getFitambaranIreo()),
-                _buildSummaryRow("Vola nivoaka", widget.offeringData.volaNivoaka, isExpense: true),
+                _buildSummaryRow("Vola nivoaka", widget.offeringData.getTotalExpenses(), isExpense: true),
                 const Divider(),
                 _buildSummaryRow("Total", widget.offeringData.getVolaSisaEoAntanana(), isTotal: true),
                 const Divider(),
