@@ -123,6 +123,10 @@ bool _canUpdate(String current, String latest) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setInt('fiangonana_id', fiangonana['id']);
           await prefs.setString('fiangonana_nom', fiangonana['nom']);
+          await prefs.setDouble(
+                  'fiangonana_caution',
+                  (fiangonana['caution'] as num?)?.toDouble() ?? 10000.0,
+                );
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const OfferingCounterScreen()),

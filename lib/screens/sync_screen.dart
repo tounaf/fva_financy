@@ -31,6 +31,24 @@ class _SyncScreenState extends State<SyncScreen> {
   File? _bordereauImage;
   bool _isFinalizing = false;
 
+  double _caution = 10000.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCaution(); // ← ajouter
+  }
+
+  Future<void> _loadCaution() async {
+    final val = await getFiangonanaCaution();
+    setState(() => _caution = val);
+  }
+
+  Future<double> getFiangonanaCaution() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('fiangonana_caution') ?? 10000.0;
+  }
+  
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
@@ -69,7 +87,7 @@ class _SyncScreenState extends State<SyncScreen> {
         'volaNivoaka': widget.offeringData.getTotalExpenses(),
         'volaSisaEoAntanana': widget.offeringData.getVolaSisaEoAntanana(),
         'volaMiditraA': widget.offeringData.calculateVolaMiditraA(),
-        'caution': 10000,
+        'caution': prefs.getDouble('fiangonana_caution') ?? 10000.0,
       };
 
       final response = await http.post(
@@ -328,7 +346,7 @@ class _SyncScreenState extends State<SyncScreen> {
                 _buildSummaryRow("Total", widget.offeringData.getVolaSisaEoAntanana(), isTotal: true),
                 const Divider(),
                 const Text("Net à verser", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromRGBO(156, 24, 196, 1))),
-                _buildSummaryRow("Caution", 10000),
+                _buildSummaryRow("Caution", _caution),
                 _buildSummaryRow("Vola miditra A", widget.offeringData.calculateVolaMiditraA()),
                 const Divider(),
                 _buildSummaryRow("A verser", widget.offeringData.calculateVolaMiditraA() + 10000, isTotal: true),
