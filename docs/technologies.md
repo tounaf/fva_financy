@@ -12,7 +12,7 @@ Ce document liste les technologies et bibliothèques utilisées dans le projet.
 
 | Plugin | Usage |
 | :--- | :--- |
-| `http` | Communication avec l'API REST. |
+| `http` | Communication avec l'API REST (utilisé via `ApiService`). |
 | `shared_preferences` | Stockage local persistant des données de comptage et configuration. |
 | `intl` | Formatage des dates et des devises (Ariary). |
 | `google_fonts` | Utilisation de polices personnalisées (ex: Poppins). |
