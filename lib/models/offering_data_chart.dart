@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:fva_financy/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OfferingDataChart {
@@ -19,11 +19,10 @@ class OfferingDataChart {
 }
 
 Future<List<OfferingDataChart>> fetchOfferingsChart() async {
-  // final response = await http.get(Uri.parse('https://fva-vitaonyasany.mg/admin-api/public/index.php/api/offering_total_by_fiangonanas'));
   final shardPreference = await SharedPreferences.getInstance();
   final int? fiangonanaId = shardPreference.getInt('fiangonana_id');
   if (fiangonanaId != null) {
-    final response = await http.get(Uri.parse('https://fva-vitaonyasany.mg/admin-api/public/index.php/api/offering_total_by_fiangonanas?fiangonana_id=$fiangonanaId'));
+    final response = await ApiService().fetchOfferingsChart(fiangonanaId);
     if (response.statusCode == 200) {
       List<dynamic> body = jsonDecode(response.body);
       return body.map((item) => OfferingDataChart.fromJson(item)).toList();

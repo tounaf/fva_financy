@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:fva_financy/services/api_service.dart';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -53,8 +53,6 @@ class _VersementScreenState extends State<VersementScreen> {
 
     setState(() => _isLoading = true);
 
-    const String apiUrl = 'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/versements';
-    
     // Structure exacte pour API Platform (Symfony)
     final Map<String, dynamic> payload = {
       'type': _typeVersement,
@@ -67,14 +65,7 @@ class _VersementScreenState extends State<VersementScreen> {
     };
 
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(payload),
-      );
+      final response = await ApiService().postVersement(payload);
 
       if (response.statusCode == 201) {
         _showSuccessDialog();

@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fva_financy/screens/fiangonana_selection_screen.dart';
-import 'package:fva_financy/widgets/auto_update_dialog.dart';
-import 'package:http/http.dart' as http;
-import 'package:package_info_plus/package_info_plus.dart';
-import 'dart:convert';
 
 void main() {
   runApp(const OfferingCounterApp());

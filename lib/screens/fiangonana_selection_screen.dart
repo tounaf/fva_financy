@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fva_financy/services/api_service.dart';
 import 'package:fva_financy/widgets/auto_update_dialog.dart';
-import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,11 +37,7 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
     final currentVersion = packageInfo.version; 
 
     // 2. Interroger l'API GitHub pour la dernière Release
-    const String githubUser = "tounaf";
-    const String githubRepo = "fva_financy";
-    const String apiUrl = "https://api.github.com/repos/$githubUser/$githubRepo/releases/latest";
-
-    final response = await http.get(Uri.parse(apiUrl));
+    final response = await ApiService().checkGitHubRelease();
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final String latestVersionTag = data['tag_name']; // ex: "v1.0.5"
@@ -107,12 +103,7 @@ bool _canUpdate(String current, String latest) {
     }
 
     try {
-      // var url = Uri.parse('http://192.168.1.68:8000/api/fiangonanas?code=$code');
-      var url = Uri.parse('https://fva-vitaonyasany.mg/admin-api/public/index.php/api/fiangonanas?code=$code');
-      final response = await http.get(
-        url,
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-      );
+      final response = await ApiService().validateFiangonanaCode(code);
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
