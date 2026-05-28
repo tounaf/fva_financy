@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:fva_financy/services/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/offering_data.dart';
@@ -18,14 +18,6 @@ class SyncScreen extends StatefulWidget {
 }
 
 class _SyncScreenState extends State<SyncScreen> {
-  final String offeringApiUrl = 'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/offerings';
-  final String expenseApiUrl = 'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/expenses/batch';
-  final String validationApiUrl = 'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/sabbat-validations';
-  
-  // final String offeringApiUrl = 'http://192.168.1.68:8000/api/offerings';
-  // final String expenseApiUrl = 'http://192.168.1.68:8000/api/expenses/batch';
-  // final String validationApiUrl = 'http://192.168.1.68:8000/api/sabbat-validations';
-  
 
   final Map<String, bool> _isLoading = {};
   File? _bordereauImage;
@@ -90,11 +82,7 @@ class _SyncScreenState extends State<SyncScreen> {
         'caution': prefs.getDouble('fiangonana_caution') ?? 10000.0,
       };
 
-      final response = await http.post(
-        Uri.parse(validationApiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(data),
-      );
+      final response = await ApiService().finalizeSabbat(data);
 
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,11 +129,7 @@ class _SyncScreenState extends State<SyncScreen> {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse(offeringApiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(data),
-      );
+      final response = await ApiService().syncOffering(data);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         setState(() {
@@ -185,11 +169,7 @@ class _SyncScreenState extends State<SyncScreen> {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse(expenseApiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(data),
-      );
+      final response = await ApiService().syncExpenses(data);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         setState(() {

@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:fva_financy/services/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/offering_data.dart';
 import '../screens/offering_counter_screen.dart' as screen;
-import 'package:http/http.dart' as http;
 
 class VolaSisaScreen extends StatefulWidget {
   final OfferingData offeringData;
@@ -66,12 +66,7 @@ class _VolaSisaScreenState extends State<VolaSisaScreen> {
 
       if (fiangonanaId == null) return;
 
-      final uri = Uri.parse(
-        'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/sabbat_validations'
-        '?fiangonana=$fiangonanaId&order[dateSabbat]=desc&itemsPerPage=1',
-      );
-
-      final response = await http.get(uri, headers: {'Accept': 'application/ld+json'});
+      final response = await ApiService().fetchLastSabbatValidation(fiangonanaId);
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);

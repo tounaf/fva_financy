@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:fva_financy/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'versement_screen.dart';
@@ -26,14 +26,10 @@ class _SabbatAverserScreenState extends State<SabbatAverserScreen> {
     final prefs = await SharedPreferences.getInstance();
     final fiangonanaId = prefs.getInt('fiangonana_id');
 
-    final url = Uri.parse(
-        'https://fva-vitaonyasany.mg/admin-api/public/index.php/api/sabbat_validations'
-        '?exists[versement]=false'
-        '&fiangonana=$fiangonanaId'
-      );
+    if (fiangonanaId == null) return;
     
     try {
-      final response = await http.get(url, headers: {'Accept': 'application/json'});
+      final response = await ApiService().fetchSabbatsSansVersement(fiangonanaId);
       if (response.statusCode == 200) {
         setState(() {
           // On s'assure que c'est une liste, sinon on met une liste vide
