@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:fva_financy/screens/dashboard/offering_chart_screen.dart';
+import 'package:fva_financy/services/api_service.dart';
 import 'package:fva_financy/screens/fiangonana_selection_screen.dart';
 import 'package:fva_financy/screens/sabbat_averser_screen.dart';
 import 'package:fva_financy/screens/sync_screen.dart';
@@ -44,9 +47,39 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
 
   Future<void> _initializeData() async {
     await offeringData.loadData();
+    await _fetchAmbimbolaTeoAloha();
     setState(() {
       _isLoading = false;
     });
+  }
+
+  Future<void> _fetchAmbimbolaTeoAloha() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final fiangonanaId = prefs.getInt('fiangonana_id');
+
+      if (fiangonanaId == null) return;
+
+      final response =
+          await ApiService().fetchLastSabbatValidation(fiangonanaId);
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final members = json['member'] as List;
+
+        if (members.isNotEmpty) {
+          final lastValidation = members.first;
+          final apiValue =
+              (lastValidation['volaSisaEoAntanana'] as num?)?.toDouble() ?? 0.0;
+
+          if (apiValue != 0.0) {
+            offeringData.updateAmbimbolaTeoAloha(apiValue);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Erreur lors de la récupération de l'ambimbola : $e");
+    }
   }
 
   @override
