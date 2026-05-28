@@ -118,6 +118,10 @@ bool _canUpdate(String current, String latest) {
                   'fiangonana_caution',
                   (fiangonana['caution'] as num?)?.toDouble() ?? 10000.0,
                 );
+          await prefs.setDouble(
+                  'fiangonana_rar',
+                  (fiangonana['rar'] as num?)?.toDouble() ?? 0.0,
+                );
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const OfferingCounterScreen()),

@@ -25,10 +25,13 @@ class _SyncScreenState extends State<SyncScreen> {
 
   double _caution = 10000.0;
 
+  double _rar = 0.0;
+
   @override
   void initState() {
     super.initState();
-    _loadCaution(); // ← ajouter
+    _loadCaution();
+    _loadRar();
   }
 
   Future<void> _loadCaution() async {
@@ -36,9 +39,19 @@ class _SyncScreenState extends State<SyncScreen> {
     setState(() => _caution = val);
   }
 
+  Future<void> _loadRar() async {
+    final val = await getFiangonanaRar();
+    setState(() => _rar = val);
+  }
+
   Future<double> getFiangonanaCaution() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getDouble('fiangonana_caution') ?? 10000.0;
+  }
+
+  Future<double> getFiangonanaRar() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('fiangonana_rar') ?? 0.0;
   }
   
   Future<void> _pickImage() async {
@@ -79,7 +92,8 @@ class _SyncScreenState extends State<SyncScreen> {
         'volaNivoaka': widget.offeringData.getTotalExpenses(),
         'volaSisaEoAntanana': widget.offeringData.getVolaSisaEoAntanana(),
         'volaMiditraA': widget.offeringData.calculateVolaMiditraA(),
-        'caution': prefs.getDouble('fiangonana_caution') ?? 10000.0,
+        'caution': _caution,
+        'rar': _rar,
       };
 
       final response = await ApiService().finalizeSabbat(data);
@@ -327,9 +341,10 @@ class _SyncScreenState extends State<SyncScreen> {
                 const Divider(),
                 const Text("Net à verser", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromRGBO(156, 24, 196, 1))),
                 _buildSummaryRow("Caution", _caution),
+                _buildSummaryRow("Rar", _rar),
                 _buildSummaryRow("Vola miditra A", widget.offeringData.calculateVolaMiditraA()),
                 const Divider(),
-                _buildSummaryRow("A verser", widget.offeringData.calculateVolaMiditraA() + 10000, isTotal: true),
+                _buildSummaryRow("A verser", widget.offeringData.calculateVolaMiditraA() + _caution + _rar, isTotal: true),
 
               ],
             ),
