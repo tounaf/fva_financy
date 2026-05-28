@@ -31,6 +31,18 @@ L'utilisateur peut enregistrer les dépenses effectuées durant le Sabbat.
 
 ## 5. Synchronisation et Finalisation
 
+```mermaid
+flowchart TD
+    A[Début Sabbat] --> B[Sélection Fiangonana]
+    B --> C[Comptage Offrandes / Saisie Dépenses]
+    C --> D{Synchronisation Individuelle}
+    D -->|Optionnel| E[Envoi Offrande/Dépense vers API]
+    D --> F[Finalisation du Sabbat]
+    F --> G[Capture Photo Bordereau Signé]
+    G --> H[Envoi Récapitulatif + Photo vers API]
+    H --> I[Fin du Sabbat]
+```
+
 - **Synchronisation** : Chaque type d'offrande et le lot de dépenses peuvent être envoyés individuellement à l'API.
 - **Finalisation du Sabbat** :
   - L'utilisateur doit prendre une photo du bordereau signé.

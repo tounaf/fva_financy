@@ -22,6 +22,20 @@ L'application est structurée de la manière suivante dans le répertoire `lib/`
 
 ## Flux de Données
 
+```mermaid
+graph TD
+    UI[Interface Utilisateur - Screens/Widgets]
+    OD[OfferingData - Logique Métier]
+    SP[(SharedPreferences - Stockage Local)]
+    API[API REST - Backend Symfony]
+
+    UI -->|Saisie/Action| OD
+    OD -->|Lecture/Écriture| SP
+    OD -->|Mise à jour| UI
+    UI -->|Appel API| API
+    API -->|Réponse| UI
+```
+
 1. **Persistance Locale** : L'application utilise `shared_preferences` pour stocker les comptages en cours, l'ID de l'église sélectionnée et d'autres paramètres afin de ne pas perdre de données en cas de fermeture de l'application.
 2. **Gestion d'État** : L'état est principalement géré via des `StatefulWidget` et la classe `OfferingData` qui centralise les calculs.
 3. **Communication API** : L'application communique avec une API REST (Symfony) pour valider les codes d'église, synchroniser les offrandes, les dépenses et finaliser le Sabbat.
