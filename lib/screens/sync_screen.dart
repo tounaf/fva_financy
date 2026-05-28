@@ -248,7 +248,7 @@ class _SyncScreenState extends State<SyncScreen> {
             ),
             const SizedBox(height: 8),
             ElevatedButton.icon(
-              onPressed: isSynced || isLoading ? null : () => sendOfferingToApi(offering),
+              onPressed: isSynced || isLoading || total == 0 ? null : () => sendOfferingToApi(offering),
               icon: isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(isSynced ? Icons.check_circle : Icons.sync),
               label: Text(isSynced ? 'Synchronisé' : 'Synchroniser'),
               style: ElevatedButton.styleFrom(backgroundColor: isSynced ? Colors.grey : const Color.fromRGBO(156, 24, 196, 1), foregroundColor: Colors.white),
@@ -280,7 +280,7 @@ class _SyncScreenState extends State<SyncScreen> {
             ),
             const SizedBox(height: 8),
             ElevatedButton.icon(
-              onPressed: isSynced || isLoading ? null : () => sendExpensesToApi(),
+              onPressed: isSynced || isLoading || totalExpenses == 0 ? null : () => sendExpensesToApi(),
               icon: isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(isSynced ? Icons.check_circle : Icons.sync),
               label: Text(isSynced ? 'Synchronisé' : 'Synchroniser'),
               style: ElevatedButton.styleFrom(backgroundColor: isSynced ? Colors.grey : const Color.fromRGBO(156, 24, 196, 1), foregroundColor: Colors.white),

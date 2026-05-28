@@ -1,9 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:fva_financy/services/api_service.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/offering_data.dart';
 import '../screens/offering_counter_screen.dart' as screen;
 
@@ -18,8 +14,6 @@ class VolaSisaScreen extends StatefulWidget {
 
 class _VolaSisaScreenState extends State<VolaSisaScreen> {
   final _ambimbolaController = TextEditingController();
-  bool _isLoading = true;
-  late OfferingData offeringData;
 
   final _volaMiditraController = TextEditingController();
   final _volaNivoakaController = TextEditingController();
@@ -29,26 +23,23 @@ class _VolaSisaScreenState extends State<VolaSisaScreen> {
   @override
   void initState() {
     super.initState();
+    _refreshFields();
+  }
 
+  void _refreshFields() {
     _ambimbolaLocked = widget.offeringData.ambimbolaTeoAloha != 0.0;
-
     _ambimbolaController.text =
         widget.offeringData.ambimbolaTeoAloha.toString();
     _volaMiditraController.text =
         widget.offeringData.calculateVolaMiditraF().toString();
-    _volaNivoakaController.text = widget.offeringData.getTotalExpenses().toString();
-    offeringData = OfferingData();
-    _initializeData();
+    _volaNivoakaController.text =
+        widget.offeringData.getTotalExpenses().toString();
   }
 
-  Future<void> _initializeData() async {
-    await offeringData.loadData();
-    await _fetchAmbimbolaTeoAloha();
-
-    setState(() {
-      _isLoading = false;
-    });
-
+  @override
+  void didUpdateWidget(covariant VolaSisaScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _refreshFields();
   }
 
   @override
@@ -57,44 +48,6 @@ class _VolaSisaScreenState extends State<VolaSisaScreen> {
     _volaMiditraController.dispose();
     _volaNivoakaController.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchAmbimbolaTeoAloha() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final fiangonanaId = prefs.getInt('fiangonana_id');
-
-      if (fiangonanaId == null) return;
-
-      final response = await ApiService().fetchLastSabbatValidation(fiangonanaId);
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final members = json['member'] as List;
-
-        if (members.isNotEmpty) {
-          final lastValidation = members.first;
-          final apiValue = (lastValidation['volaSisaEoAntanana'] as num?)?.toDouble() ?? 0.0;
-
-          if (apiValue != 0.0) {
-            // Priorité à la valeur API
-            widget.offeringData.updateAmbimbolaTeoAloha(apiValue);
-            _ambimbolaController.text = apiValue.toString();
-            _ambimbolaLocked = true;
-          } else {
-            // Fallback sur la valeur locale
-            _ambimbolaLocked = widget.offeringData.ambimbolaTeoAloha != 0.0;
-          }
-        } else {
-          _ambimbolaLocked = widget.offeringData.ambimbolaTeoAloha != 0.0;
-        }
-      }
-    } catch (e) {
-      // En cas d'erreur réseau, fallback sur la valeur locale
-      _ambimbolaLocked = widget.offeringData.ambimbolaTeoAloha != 0.0;
-    }
-
-    setState(() {});
   }
 
 
