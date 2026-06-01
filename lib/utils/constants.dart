@@ -34,6 +34,6 @@ const Map<String, String> offeringCategories = {
   // 'Maitso': 'Vola miditra A',
   'Tapa-bolana': 'Vola miditra A',
   'Sabatan\'ny Mpitandrina': 'Vola miditra A',
-  'Radio': 'Autre',
-  'Hetsika manokana': 'Autre',
+  'Radio': 'Vola miditra A',
+  'Hetsika manokana': 'Vola miditra A',
 };

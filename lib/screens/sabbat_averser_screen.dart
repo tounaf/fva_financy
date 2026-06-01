@@ -63,7 +63,7 @@ class _SabbatAverserScreenState extends State<SabbatAverserScreen> {
                 
                 // 2. Sécurisation du montant (C'est ici que ça crashait)
                 // On utilise double.tryParse ou une vérification de type
-                final dynamic rawMontant = sabbat['volaSisaEoAntanana'];
+                final dynamic rawMontant = sabbat['volaMiditraA'];
                 final double montantValide = _parseAmount(rawMontant);
 
                 return Card(
