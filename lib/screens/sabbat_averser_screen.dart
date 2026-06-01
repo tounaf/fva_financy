@@ -64,7 +64,15 @@ class _SabbatAverserScreenState extends State<SabbatAverserScreen> {
                 // 2. Sécurisation du montant (C'est ici que ça crashait)
                 // On utilise double.tryParse ou une vérification de type
                 final dynamic rawMontant = sabbat['volaMiditraA'];
-                final double montantValide = _parseAmount(rawMontant);
+                double montantValide = _parseAmount(rawMontant);
+
+                final dynamic rar = sabbat['rar'];
+                final double rarValide = _parseAmount(rar);
+
+                final dynamic caution = sabbat['caution'];
+                final double cautionValide = _parseAmount(caution);
+
+                montantValide += rarValide + cautionValide;
 
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
