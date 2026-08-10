@@ -6,8 +6,14 @@ class Expense {
   final String label;
   final double amount;
   final DateTime date;
+  final int? serverId;
 
-  Expense({required this.label, required this.amount, required this.date});
+  Expense({
+    required this.label,
+    required this.amount,
+    required this.date,
+    this.serverId,
+  });
 
   String get formattedDate {
     return DateFormat('dd/MM/yyyy').format(date);
@@ -21,13 +27,49 @@ class Expense {
         'label': label,
         'amount': amount,
         'date': date.toIso8601String(),
+        if (serverId != null) 'serverId': serverId,
       };
 
   factory Expense.fromJson(Map<String, dynamic> json) => Expense(
         label: json['label'],
-        amount: json['amount'],
+        amount: (json['amount'] as num).toDouble(),
         date: DateTime.parse(json['date']),
+        serverId: json['serverId'] as int?,
       );
+
+  factory Expense.fromApi(Map<String, dynamic> json) {
+    final dateRaw = json['dateSabbat'] ?? json['date'];
+    return Expense(
+      label: json['description']?.toString() ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      date: dateRaw != null
+          ? DateTime.parse(dateRaw.toString())
+          : DateTime.now(),
+      serverId: _parseApiId(json),
+    );
+  }
+
+  Expense copyWith({
+    String? label,
+    double? amount,
+    DateTime? date,
+    int? serverId,
+  }) {
+    return Expense(
+      label: label ?? this.label,
+      amount: amount ?? this.amount,
+      date: date ?? this.date,
+      serverId: serverId ?? this.serverId,
+    );
+  }
+
+  static int? _parseApiId(Map<String, dynamic> json) {
+    if (json['id'] is int) return json['id'] as int;
+    final iri = json['@id']?.toString();
+    if (iri == null) return null;
+    final match = RegExp(r'/(\d+)$').firstMatch(iri);
+    return match != null ? int.tryParse(match.group(1)!) : null;
+  }
 }
 
 class ExpenseData {
@@ -35,14 +77,19 @@ class ExpenseData {
 
   Future<void> addExpense(String label, double amount, DateTime date) async {
     expenses.add(Expense(label: label, amount: amount, date: date));
-    await saveExpenses(); // Sauvegarder après ajout
+    await saveExpenses();
   }
 
   Future<void> deleteExpense(int index) async {
     if (index >= 0 && index < expenses.length) {
       expenses.removeAt(index);
-      await saveExpenses(); // Sauvegarder après suppression
+      await saveExpenses();
     }
+  }
+
+  Future<void> replaceAll(List<Expense> next) async {
+    expenses = List<Expense>.from(next);
+    await saveExpenses();
   }
 
   double calculateTotalExpenses() {
@@ -58,14 +105,12 @@ class ExpenseData {
         .toList();
   }
 
-  // Sauvegarder les dépenses dans SharedPreferences
   Future<void> saveExpenses() async {
     final prefs = await SharedPreferences.getInstance();
     final expenseList = expenses.map((e) => e.toJson()).toList();
     await prefs.setString('expenses', jsonEncode(expenseList));
   }
 
-  // Charger les dépenses depuis SharedPreferences
   Future<void> loadExpenses() async {
     final prefs = await SharedPreferences.getInstance();
     final String? expensesString = prefs.getString('expenses');

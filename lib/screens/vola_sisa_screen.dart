@@ -27,7 +27,8 @@ class _VolaSisaScreenState extends State<VolaSisaScreen> {
   }
 
   void _refreshFields() {
-    _ambimbolaLocked = widget.offeringData.ambimbolaTeoAloha != 0.0;
+    _ambimbolaLocked = widget.offeringData.isReadOnly ||
+        widget.offeringData.ambimbolaTeoAloha != 0.0;
     _ambimbolaController.text =
         widget.offeringData.ambimbolaTeoAloha.toString();
     _volaMiditraController.text =

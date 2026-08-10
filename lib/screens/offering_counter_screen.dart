@@ -35,6 +35,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
   late TabController _tabController;
   late OfferingData offeringData;
   bool _isLoading = true;
+  bool _isLoadingDate = false;
 
   @override
   void initState() {
@@ -106,6 +107,43 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
     );
   }
 
+  Future<void> _pickDateSabbat() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: offeringData.dateSabbat,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+      helpText: 'Date du sabbat',
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() => _isLoadingDate = true);
+    try {
+      final found = await offeringData.loadFromServerForDate(picked);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: found ? Colors.orange.shade800 : Colors.green.shade700,
+          content: Text(
+            found
+                ? 'Données existantes chargées — mode modification'
+                : 'Aucune donnée pour cette date — nouvelle saisie',
+          ),
+        ),
+      );
+      setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      await offeringData.updateDateSabbat(picked);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de charger les données : $e')),
+      );
+      setState(() {});
+    } finally {
+      if (mounted) setState(() => _isLoadingDate = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -128,6 +166,14 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.blueAccent,),
             onPressed: () async {
+              if (offeringData.isReadOnly) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Sabbat déjà validé — réinitialisation impossible'),
+                  ),
+                );
+                return;
+              }
               await offeringData.resetData();
               setState(() {});
             },
@@ -159,6 +205,19 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
+                  _buildDateSabbatPicker(),
+                  if (_isLoadingDate) ...[
+                    const SizedBox(height: 12),
+                    const LinearProgressIndicator(),
+                  ],
+                  if (offeringData.isReadOnly) ...[
+                    const SizedBox(height: 12),
+                    _buildLockedBanner(),
+                  ] else if (offeringData.isModificationMode) ...[
+                    const SizedBox(height: 12),
+                    _buildModificationBanner(),
+                  ],
+                  const SizedBox(height: 12),
                   _buildSummaryCard('Vola miditra F', formatAmount(categoryTotals['Vola miditra F']!), neonGreen),
                   const SizedBox(height: 10),
                   _buildSummaryCard('Vola miditra A', formatAmount(categoryTotals['Vola miditra A']!), deepOrange),
@@ -256,6 +315,112 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLockedBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.blueGrey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.blueGrey.shade300),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock, color: Colors.blueGrey.shade800),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Sabbat déjà validé (VALIDATED) — lecture seule, modifications impossibles.',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.blueGrey.shade900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModificationBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.orange.shade300),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.edit_note, color: Colors.orange.shade800),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Mode modification — données déjà enregistrées pour cette date. Modifiez puis resynchronisez les écarts.',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.orange.shade900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateSabbatPicker() {
+    final formatted = DateFormat('dd/MM/yyyy').format(offeringData.dateSabbat);
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      elevation: cardElevation,
+      child: InkWell(
+        onTap: _isLoadingDate ? null : _pickDateSabbat,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_today, color: vibrantPurple),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Date du sabbat',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    Text(
+                      formatted,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                offeringData.isModificationMode ? 'chargé' : 'modifier',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: vibrantPurple,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -361,6 +526,7 @@ class _OfferingCounterScreenState extends State<OfferingCounterScreen>
                         setState(() => offeringData.updateQuantity(type, bill, count));
                       },
                       isCompleted: offeringData.completionStatus[type]!,
+                      readOnly: offeringData.isReadOnly,
                       onToggleCompletion: () {
                         setState(() => offeringData.toggleCompletion(type));
                       },

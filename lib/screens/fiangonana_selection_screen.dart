@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fva_financy/services/api_service.dart';
 import 'package:fva_financy/widgets/auto_update_dialog.dart';
@@ -23,7 +24,10 @@ class _FiangonanaSelectionScreenState extends State<FiangonanaSelectionScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkUpdate(); 
+      // En debug (émulateur / hot reload), l'OTA bloque le flow et échoue souvent.
+      if (!kDebugMode) {
+        _checkUpdate();
+      }
     });
 
     _checkStoredFiangonana();

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../utils/constants.dart' as constants;
 import '../screens/offering_counter_screen.dart' as screen;
 
 class OfferingTab extends StatefulWidget {
@@ -10,6 +9,7 @@ class OfferingTab extends StatefulWidget {
   final Function(int, int) onQuantityChanged;
   final bool isCompleted;
   final VoidCallback onToggleCompletion;
+  final bool readOnly;
 
   const OfferingTab({
     super.key,
@@ -19,10 +19,11 @@ class OfferingTab extends StatefulWidget {
     required this.onQuantityChanged,
     required this.isCompleted,
     required this.onToggleCompletion,
+    this.readOnly = false,
   });
 
   @override
-  _OfferingTabState createState() => _OfferingTabState();
+  State<OfferingTab> createState() => _OfferingTabState();
 }
 
 class _OfferingTabState extends State<OfferingTab> {
@@ -47,8 +48,13 @@ class _OfferingTabState extends State<OfferingTab> {
   @override
   void didUpdateWidget(OfferingTab oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.quantities != oldWidget.quantities) {
-      _syncControllersWithQuantities();
+    // Toujours resynchroniser les champs si les quantités ont changé
+    // (ex. chargement depuis l'API), même si la Map est mutée ou remplacée.
+    for (final bill in widget.billTypes) {
+      final next = (widget.quantities[bill] ?? 0).toString();
+      if (_controllers[bill]?.text != next) {
+        _controllers[bill]!.text = next;
+      }
     }
   }
 
@@ -93,6 +99,8 @@ class _OfferingTabState extends State<OfferingTab> {
     }
   }
 
+  bool get _locked => widget.readOnly || widget.isCompleted;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -126,7 +134,9 @@ class _OfferingTabState extends State<OfferingTab> {
                         color: getOfferingColor(widget.offering),
                       ),
                     ),
-                    if (widget.isCompleted)
+                    if (widget.readOnly)
+                      const Icon(Icons.lock, color: Colors.blueGrey)
+                    else if (widget.isCompleted)
                       const Icon(Icons.check_circle, color: Colors.green),
                   ],
                 ),
@@ -167,12 +177,12 @@ class _OfferingTabState extends State<OfferingTab> {
                           child: TextField(
                             controller: _controllers[bill],
                             keyboardType: TextInputType.number,
-                            enabled: !widget.isCompleted,
+                            enabled: !_locked,
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               hintText: '0',
                               filled: true,
-                              fillColor: widget.isCompleted
+                              fillColor: _locked
                                   ? Colors.grey[300]
                                   : Colors.grey[100],
                               focusedBorder: OutlineInputBorder(
@@ -191,6 +201,7 @@ class _OfferingTabState extends State<OfferingTab> {
                               }
                             },
                             onChanged: (value) {
+                              if (_locked) return;
                               int count = int.tryParse(value) ?? 0;
                               widget.onQuantityChanged(bill, count);
                               if (_controllers[bill]!.text !=
@@ -222,23 +233,24 @@ class _OfferingTabState extends State<OfferingTab> {
             ],
           ),
         ),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: widget.isCompleted
-              ? IconButton(
-                  onPressed: widget.onToggleCompletion,
-                  icon: const Icon(Icons.edit),
-                  color: Colors.orange,
-                  tooltip: 'Rééditer',
-                )
-              : IconButton(
-                  onPressed: widget.onToggleCompletion,
-                  icon: const Icon(Icons.check),
-                  color: Colors.green,
-                  tooltip: 'Terminer',
-                ),
-        ),
+        if (!widget.readOnly)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: widget.isCompleted
+                ? IconButton(
+                    onPressed: widget.onToggleCompletion,
+                    icon: const Icon(Icons.edit),
+                    color: Colors.orange,
+                    tooltip: 'Rééditer',
+                  )
+                : IconButton(
+                    onPressed: widget.onToggleCompletion,
+                    icon: const Icon(Icons.check),
+                    color: Colors.green,
+                    tooltip: 'Terminer',
+                  ),
+          ),
       ],
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fva_financy/services/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/expense.dart';
 import '../models/offering_data.dart';
 import '../utils/constants.dart';
 import 'dart:convert';
@@ -65,6 +66,12 @@ class _SyncScreenState extends State<SyncScreen> {
   }
 
   Future<void> finalizeSabbat() async {
+    if (widget.offeringData.isReadOnly) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sabbat déjà validé — finalisation impossible')),
+      );
+      return;
+    }
     if (_bordereauImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez prendre une photo du bordereau signé')),
@@ -85,7 +92,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
       final data = {
         'imageName': base64Image,
-        'dateSabbat': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        'dateSabbat': DateFormat('yyyy-MM-dd').format(widget.offeringData.dateSabbat),
         'fiangonana': "/api/fiangonanas/$fiangonanaId",
         'ambimbolaTeoAloha': widget.offeringData.ambimbolaTeoAloha,
         'volaMiditraAndroany': widget.offeringData.getFitambaranIreo(),
@@ -116,12 +123,20 @@ class _SyncScreenState extends State<SyncScreen> {
   }
 
   Future<void> sendOfferingToApi(String offering) async {
+    if (widget.offeringData.isReadOnly) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sabbat déjà validé — synchronisation impossible')),
+      );
+      return;
+    }
     setState(() => _isLoading[offering] = true);
 
     final quantities = widget.offeringData.quantities[offering]!;
     final total = widget.offeringData.calculateTotalForOffering(offering);
     final prefs = await SharedPreferences.getInstance();
     final fiangonanaId = prefs.getInt('fiangonana_id');
+    final remoteId = widget.offeringData.remoteOfferingIds[offering];
+    final isUpdate = remoteId != null;
 
     if (fiangonanaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur ID Fiangonana')));
@@ -133,70 +148,159 @@ class _SyncScreenState extends State<SyncScreen> {
       'type': offering,
       'quantities': quantities.map((bill, count) => MapEntry(bill.toString(), count)),
       'total': total,
+      'date': DateFormat('yyyy-MM-dd').format(widget.offeringData.dateSabbat),
       'fiangonana': "/api/fiangonanas/$fiangonanaId"
     };
 
-    final confirm = await _showConfirmDialog('Voulez-vous synchroniser l\'offrande "$offering" ?');
+    final confirm = await _showConfirmDialog(
+      isUpdate
+          ? 'Mettre à jour l\'offrande "$offering" (écarts avec la base) ?'
+          : 'Voulez-vous synchroniser l\'offrande "$offering" ?',
+    );
     if (confirm != true) {
       setState(() => _isLoading[offering] = false);
       return;
     }
 
     try {
-      final response = await ApiService().syncOffering(data);
+      final api = ApiService();
+      final response = isUpdate
+          ? await api.updateOffering(remoteId, data)
+          : await api.syncOffering(data);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        int? savedId = remoteId;
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map) {
+            if (body['id'] is int) {
+              savedId = body['id'] as int;
+            } else {
+              final iri = body['@id']?.toString();
+              final match = iri == null ? null : RegExp(r'/(\d+)$').firstMatch(iri);
+              if (match != null) savedId = int.tryParse(match.group(1)!);
+            }
+          }
+        } catch (_) {}
+
         setState(() {
-          widget.offeringData.updateSyncStatus(offering, true);
+          widget.offeringData.rememberSyncedOffering(offering, savedId);
           _isLoading[offering] = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$offering synchronisé')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isUpdate ? '$offering mis à jour' : '$offering synchronisé')),
+        );
       } else {
-        throw Exception();
+        throw Exception('HTTP ${response.statusCode}');
       }
     } catch (e) {
       setState(() => _isLoading[offering] = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur de synchronisation')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur de synchronisation : $e')),
+      );
     }
   }
 
   Future<void> sendExpensesToApi() async {
+    if (widget.offeringData.isReadOnly) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sabbat déjà validé — synchronisation impossible')),
+      );
+      return;
+    }
     setState(() => _isLoading['expenses'] = true);
 
     final expenses = widget.offeringData.expenseData.expenses;
     final prefs = await SharedPreferences.getInstance();
     final fiangonanaId = prefs.getInt('fiangonana_id');
+    final remoteIds = List<int>.from(widget.offeringData.remoteExpenseIds);
+    final isUpdate = remoteIds.isNotEmpty;
 
-    final data = {
-      'expenses': expenses.map((e) => {
-        'description': e.label,
-        'amount': e.amount,
-        'date': DateFormat('yyyy-MM-dd').format(e.date),
-        'fiangonana': "/api/fiangonanas/$fiangonanaId"
-      }).toList()
-    };
+    if (fiangonanaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur ID Fiangonana')));
+      setState(() => _isLoading['expenses'] = false);
+      return;
+    }
 
-    final confirm = await _showConfirmDialog('Synchroniser les dépenses ?');
+    final confirm = await _showConfirmDialog(
+      isUpdate ? 'Mettre à jour les dépenses (remplacer en base) ?' : 'Synchroniser les dépenses ?',
+    );
     if (confirm != true) {
       setState(() => _isLoading['expenses'] = false);
       return;
     }
 
     try {
-      final response = await ApiService().syncExpenses(data);
+      final api = ApiService();
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      // En mode modification : supprimer les anciennes lignes puis recréer.
+      for (final id in remoteIds) {
+        final del = await api.deleteExpense(id);
+        if (del.statusCode != 204 && del.statusCode != 200) {
+          throw Exception('Suppression dépense #$id (${del.statusCode})');
+        }
+      }
+
+      if (expenses.isEmpty) {
         setState(() {
-          widget.offeringData.updateExpensesSyncStatus(true);
+          widget.offeringData.rememberSyncedExpenses([]);
           _isLoading['expenses'] = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dépenses synchronisées')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dépenses mises à jour (vide)')),
+        );
+        return;
+      }
+
+      final data = {
+        'expenses': expenses.map((e) => {
+          'description': e.label,
+          'amount': e.amount,
+          'date': DateFormat('yyyy-MM-dd').format(widget.offeringData.dateSabbat),
+          'fiangonana': "/api/fiangonanas/$fiangonanaId"
+        }).toList()
+      };
+
+      final response = await api.syncExpenses(data);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final created = <Expense>[];
+        try {
+          final body = jsonDecode(response.body);
+          final list = body is List ? body : (body is Map ? (body['member'] ?? body['hydra:member']) : null);
+          if (list is List) {
+            for (final item in list) {
+              if (item is Map) {
+                created.add(Expense.fromApi(Map<String, dynamic>.from(item)));
+              }
+            }
+          }
+        } catch (_) {}
+
+        if (created.isEmpty) {
+          // Fallback si le batch ne renvoie pas les IDs
+          created.addAll(expenses.map((e) => Expense(
+                label: e.label,
+                amount: e.amount,
+                date: widget.offeringData.dateSabbat,
+              )));
+        }
+
+        setState(() {
+          widget.offeringData.rememberSyncedExpenses(created);
+          _isLoading['expenses'] = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isUpdate ? 'Dépenses mises à jour' : 'Dépenses synchronisées')),
+        );
       } else {
-        throw Exception();
+        throw Exception('HTTP ${response.statusCode}');
       }
     } catch (e) {
       setState(() => _isLoading['expenses'] = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur dépenses')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur dépenses : $e')),
+      );
     }
   }
 
@@ -220,6 +324,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dateLabel = DateFormat('dd/MM/yyyy').format(widget.offeringData.dateSabbat);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromRGBO(156, 24, 196, 1),
@@ -227,11 +332,61 @@ class _SyncScreenState extends State<SyncScreen> {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16.0),
-        itemCount: offeringTypes.length + 2, // +1 pour Dépenses, +1 pour Finalisation
+        itemCount: offeringTypes.length + 3, // date + offrandes + dépenses + finalisation
         itemBuilder: (context, index) {
-          if (index < offeringTypes.length) {
-            return _buildOfferingCard(offeringTypes[index]);
-          } else if (index == offeringTypes.length) {
+          if (index == 0) {
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                leading: const Icon(Icons.calendar_today, color: Color.fromRGBO(156, 24, 196, 1)),
+                title: const Text('Date du sabbat'),
+                subtitle: Text(
+                  widget.offeringData.isReadOnly
+                      ? '$dateLabel · validé (lecture seule)'
+                      : widget.offeringData.isModificationMode
+                          ? '$dateLabel · mode modification'
+                          : dateLabel,
+                ),
+                trailing: const Icon(Icons.edit, size: 20),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: widget.offeringData.dateSabbat,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2035),
+                    helpText: 'Date du sabbat',
+                  );
+                  if (picked == null) return;
+                  try {
+                    final found = await widget.offeringData.loadFromServerForDate(picked);
+                    if (!mounted) return;
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: found ? Colors.orange.shade800 : Colors.green.shade700,
+                        content: Text(
+                          found
+                              ? 'Données existantes chargées — mode modification'
+                              : 'Aucune donnée pour cette date — nouvelle saisie',
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    await widget.offeringData.updateDateSabbat(picked);
+                    if (!mounted) return;
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Impossible de charger les données : $e')),
+                    );
+                  }
+                },
+              ),
+            );
+          }
+          final offeringIndex = index - 1;
+          if (offeringIndex < offeringTypes.length) {
+            return _buildOfferingCard(offeringTypes[offeringIndex]);
+          } else if (offeringIndex == offeringTypes.length) {
             return _buildExpenseCard();
           } else {
             return _buildFinalizeSection();
@@ -243,8 +398,12 @@ class _SyncScreenState extends State<SyncScreen> {
 
   Widget _buildOfferingCard(String offering) {
     final total = widget.offeringData.calculateTotalForOffering(offering);
-    final isSynced = widget.offeringData.syncStatus[offering] ?? false;
+    final needsSync = widget.offeringData.needsOfferingSync(offering);
+    final isSynced = !needsSync && total > 0;
     final isLoading = _isLoading[offering] ?? false;
+    final isUpdate = widget.offeringData.remoteOfferingIds.containsKey(offering);
+    final locked = widget.offeringData.isReadOnly;
+    final canSync = !locked && needsSync && !isLoading && (total > 0 || isUpdate);
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -260,12 +419,32 @@ class _SyncScreenState extends State<SyncScreen> {
                 Text(formatAmount(total), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color.fromRGBO(156, 24, 196, 1))),
               ],
             ),
+            if (needsSync && isUpdate)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text('Modifié localement — à resynchroniser', style: TextStyle(fontSize: 12, color: Colors.orange)),
+              ),
             const SizedBox(height: 8),
             ElevatedButton.icon(
-              onPressed: isSynced || isLoading || total == 0 ? null : () => sendOfferingToApi(offering),
-              icon: isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(isSynced ? Icons.check_circle : Icons.sync),
-              label: Text(isSynced ? 'Synchronisé' : 'Synchroniser'),
-              style: ElevatedButton.styleFrom(backgroundColor: isSynced ? Colors.grey : const Color.fromRGBO(156, 24, 196, 1), foregroundColor: Colors.white),
+              onPressed: canSync ? () => sendOfferingToApi(offering) : null,
+              icon: isLoading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Icon(isSynced ? Icons.check_circle : (isUpdate ? Icons.sync_problem : Icons.sync)),
+              label: Text(
+                isLoading
+                    ? 'En cours...'
+                    : locked
+                        ? 'Verrouillé'
+                        : isSynced
+                            ? 'Synchronisé'
+                            : (isUpdate ? 'Resynchroniser' : 'Synchroniser'),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: (isSynced || locked)
+                    ? Colors.grey
+                    : const Color.fromRGBO(156, 24, 196, 1),
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),
@@ -275,8 +454,12 @@ class _SyncScreenState extends State<SyncScreen> {
 
   Widget _buildExpenseCard() {
     final totalExpenses = widget.offeringData.getTotalExpenses();
-    final isSynced = widget.offeringData.expensesSyncStatus;
+    final needsSync = widget.offeringData.needsExpensesSync();
+    final isSynced = !needsSync && (totalExpenses > 0 || widget.offeringData.remoteExpenseIds.isNotEmpty);
     final isLoading = _isLoading['expenses'] ?? false;
+    final isUpdate = widget.offeringData.remoteExpenseIds.isNotEmpty;
+    final locked = widget.offeringData.isReadOnly;
+    final canSync = !locked && needsSync && !isLoading;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -292,12 +475,32 @@ class _SyncScreenState extends State<SyncScreen> {
                 Text(formatAmount(totalExpenses), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color.fromRGBO(156, 24, 196, 1))),
               ],
             ),
+            if (needsSync && isUpdate)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text('Modifié localement — à resynchroniser', style: TextStyle(fontSize: 12, color: Colors.orange)),
+              ),
             const SizedBox(height: 8),
             ElevatedButton.icon(
-              onPressed: isSynced || isLoading || totalExpenses == 0 ? null : () => sendExpensesToApi(),
-              icon: isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(isSynced ? Icons.check_circle : Icons.sync),
-              label: Text(isSynced ? 'Synchronisé' : 'Synchroniser'),
-              style: ElevatedButton.styleFrom(backgroundColor: isSynced ? Colors.grey : const Color.fromRGBO(156, 24, 196, 1), foregroundColor: Colors.white),
+              onPressed: canSync ? () => sendExpensesToApi() : null,
+              icon: isLoading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Icon(isSynced ? Icons.check_circle : (isUpdate ? Icons.sync_problem : Icons.sync)),
+              label: Text(
+                isLoading
+                    ? 'En cours...'
+                    : locked
+                        ? 'Verrouillé'
+                        : isSynced
+                            ? 'Synchronisé'
+                            : (isUpdate ? 'Resynchroniser' : 'Synchroniser'),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: (isSynced || locked)
+                    ? Colors.grey
+                    : const Color.fromRGBO(156, 24, 196, 1),
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),
@@ -306,6 +509,7 @@ class _SyncScreenState extends State<SyncScreen> {
   }
 
   Widget _buildFinalizeSection() {
+    final dateLabel = DateFormat('dd/MM/yyyy').format(widget.offeringData.dateSabbat);
     return Container(
       margin: const EdgeInsets.only(top: 20, bottom: 40),
       padding: const EdgeInsets.all(16),
@@ -317,6 +521,11 @@ class _SyncScreenState extends State<SyncScreen> {
       child: Column(
         children: [
           const Text("FINALISATION DU SABBAT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 8),
+          Text(
+            'Sabbat du $dateLabel',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color.fromRGBO(156, 24, 196, 1)),
+          ),
           const SizedBox(height: 16),
 
           // ── Résumé financier ──
@@ -341,7 +550,7 @@ class _SyncScreenState extends State<SyncScreen> {
                 const Divider(),
                 const Text("Net à verser", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromRGBO(156, 24, 196, 1))),
                 _buildSummaryRow("Caution", _caution),
-                _buildSummaryRow("Rar", _rar),
+                _buildSummaryRow("Rad", _rar),
                 _buildSummaryRow("Vola miditra A", widget.offeringData.calculateVolaMiditraA()),
                 const Divider(),
                 _buildSummaryRow("A verser", widget.offeringData.calculateVolaMiditraA() + _caution + _rar, isTotal: true),
@@ -357,21 +566,33 @@ class _SyncScreenState extends State<SyncScreen> {
               padding: const EdgeInsets.only(bottom: 10),
               child: Image.file(_bordereauImage!, height: 150),
             ),
-          ElevatedButton.icon(
-            onPressed: _pickImage,
-            icon: const Icon(Icons.camera_alt),
-            label: Text(_bordereauImage == null ? "Prendre photo Bordereau" : "Changer la photo"),
-          ),
-          const SizedBox(height: 15),
+          if (!widget.offeringData.isReadOnly) ...[
+            ElevatedButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.camera_alt),
+              label: Text(_bordereauImage == null ? "Prendre photo Bordereau" : "Changer la photo"),
+            ),
+            const SizedBox(height: 15),
+          ],
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-              onPressed: _isFinalizing ? null : finalizeSabbat,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: widget.offeringData.isReadOnly ? Colors.grey : Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: (widget.offeringData.isReadOnly || _isFinalizing)
+                  ? null
+                  : finalizeSabbat,
               child: _isFinalizing
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("VALIDER ET FERMER LE SABBAT", style: TextStyle(fontWeight: FontWeight.bold)),
+                  : Text(
+                      widget.offeringData.isReadOnly
+                          ? "SABBAT DÉJÀ VALIDÉ"
+                          : "VALIDER ET FERMER LE SABBAT",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
             ),
           ),
         ],
