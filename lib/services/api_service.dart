@@ -30,6 +30,20 @@ class ApiService {
     );
   }
 
+  Future<http.Response> patch(String endpoint, dynamic body, {Map<String, String>? headers}) async {
+    final url = Uri.parse('${AppConfig.baseUrl}$endpoint');
+    return await http.patch(
+      url,
+      headers: headers ?? _headers,
+      body: jsonEncode(body),
+    );
+  }
+
+  Future<http.Response> delete(String endpoint, {Map<String, String>? headers}) async {
+    final url = Uri.parse('${AppConfig.baseUrl}$endpoint');
+    return await http.delete(url, headers: headers ?? _headers);
+  }
+
   // GitHub Update Check
   Future<http.Response> checkGitHubRelease() async {
     const String apiUrl = "https://api.github.com/repos/${AppConfig.githubUser}/${AppConfig.githubRepo}/releases/latest";
@@ -46,9 +60,35 @@ class ApiService {
     return await post('/offerings', data);
   }
 
+  Future<http.Response> updateOffering(int id, Map<String, dynamic> data) async {
+    return await patch('/offerings/$id', data);
+  }
+
+  Future<http.Response> fetchOfferingsByDate(int fiangonanaId, String dateYmd) async {
+    final endpoint =
+        '/offerings?fiangonana=$fiangonanaId&date[after]=$dateYmd&date[before]=$dateYmd&itemsPerPage=100';
+    return await get(endpoint, headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/ld+json',
+    });
+  }
+
   // Expenses
   Future<http.Response> syncExpenses(Map<String, dynamic> data) async {
     return await post('/expenses/batch', data);
+  }
+
+  Future<http.Response> fetchExpensesByDate(int fiangonanaId, String dateYmd) async {
+    final endpoint =
+        '/expenses?fiangonana=$fiangonanaId&dateSabbat[after]=$dateYmd&dateSabbat[before]=$dateYmd&itemsPerPage=100';
+    return await get(endpoint, headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/ld+json',
+    });
+  }
+
+  Future<http.Response> deleteExpense(int id) async {
+    return await delete('/expenses/$id');
   }
 
   // Sabbat Validations

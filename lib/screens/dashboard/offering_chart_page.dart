@@ -41,7 +41,11 @@ class _OfferingChartPageState extends State<OfferingChartPage> {
                   titlesData: _buildTitles(currentData),
                   borderData: FlBorderData(
                     show: true,
-                    border: Border(bottom: BorderSide(color: const Color.fromARGB(255, 163, 12, 12))),
+                    border: const Border(
+                      bottom: BorderSide(
+                        color: Color.fromARGB(255, 163, 12, 12),
+                      ),
+                    ),
                   ),
                   barGroups: _generateBarGroups(currentData),
                 ),

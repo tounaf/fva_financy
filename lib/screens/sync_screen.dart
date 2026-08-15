@@ -1,30 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:fva_financy/services/api_service.dart';
+import 'package:fva_financy/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/expense.dart';
 import '../models/offering_data.dart';
 import '../utils/constants.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
+enum SyncSection { all, syncOnly, finalizeOnly }
+
 class SyncScreen extends StatefulWidget {
   final OfferingData offeringData;
+  final bool embedded;
+  final SyncSection section;
+  final VoidCallback? onDataChanged;
 
-  const SyncScreen({super.key, required this.offeringData});
+  const SyncScreen({
+    super.key,
+    required this.offeringData,
+    this.embedded = false,
+    this.section = SyncSection.all,
+    this.onDataChanged,
+  });
 
   @override
-  _SyncScreenState createState() => _SyncScreenState();
+  State<SyncScreen> createState() => _SyncScreenState();
 }
 
 class _SyncScreenState extends State<SyncScreen> {
-
   final Map<String, bool> _isLoading = {};
   File? _bordereauImage;
   bool _isFinalizing = false;
-
   double _caution = 10000.0;
-
   double _rar = 0.0;
 
   @override
@@ -53,21 +64,23 @@ class _SyncScreenState extends State<SyncScreen> {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getDouble('fiangonana_rar') ?? 0.0;
   }
-  
+
+  void _notify() => widget.onDataChanged?.call();
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    final pickedFile =
+        await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
     if (pickedFile != null) {
-      setState(() {
-        _bordereauImage = File(pickedFile.path);
-      });
+      setState(() => _bordereauImage = File(pickedFile.path));
     }
   }
 
   Future<void> finalizeSabbat() async {
     if (_bordereauImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez prendre une photo du bordereau signé')),
+        const SnackBar(
+            content: Text('Veuillez prendre une photo du bordereau signé')),
       );
       return;
     }
@@ -77,15 +90,16 @@ class _SyncScreenState extends State<SyncScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final fiangonanaId = prefs.getInt('fiangonana_id');
-      
       if (fiangonanaId == null) throw Exception('ID Fiangonana manquant');
 
       List<int> imageBytes = await _bordereauImage!.readAsBytes();
-      String base64Image = "data:image/jpeg;base64,${base64Encode(imageBytes)}";
+      String base64Image =
+          "data:image/jpeg;base64,${base64Encode(imageBytes)}";
 
       final data = {
         'imageName': base64Image,
-        'dateSabbat': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        'dateSabbat':
+            DateFormat('yyyy-MM-dd').format(widget.offeringData.dateSabbat),
         'fiangonana': "/api/fiangonanas/$fiangonanaId",
         'ambimbolaTeoAloha': widget.offeringData.ambimbolaTeoAloha,
         'volaMiditraAndroany': widget.offeringData.getFitambaranIreo(),
@@ -97,21 +111,25 @@ class _SyncScreenState extends State<SyncScreen> {
       };
 
       final response = await ApiService().finalizeSabbat(data);
+      if (!mounted) return;
 
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: Colors.green, content: Text('Sabbat finalisé et envoyé pour contrôle !')),
+          const SnackBar(
+              backgroundColor: AppColors.success,
+              content: Text('Sabbat finalisé et envoyé pour contrôle !')),
         );
         setState(() => _bordereauImage = null);
       } else {
         throw Exception('Erreur serveur (${response.statusCode})');
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur lors de la finalisation : $e')),
       );
     } finally {
-      setState(() => _isFinalizing = false);
+      if (mounted) setState(() => _isFinalizing = false);
     }
   }
 
@@ -121,42 +139,80 @@ class _SyncScreenState extends State<SyncScreen> {
     final quantities = widget.offeringData.quantities[offering]!;
     final total = widget.offeringData.calculateTotalForOffering(offering);
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final fiangonanaId = prefs.getInt('fiangonana_id');
+    final remoteId = widget.offeringData.remoteOfferingIds[offering];
+    final isUpdate = remoteId != null;
 
     if (fiangonanaId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur ID Fiangonana')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur ID Fiangonana')));
       setState(() => _isLoading[offering] = false);
       return;
     }
 
     final data = {
       'type': offering,
-      'quantities': quantities.map((bill, count) => MapEntry(bill.toString(), count)),
+      'quantities':
+          quantities.map((bill, count) => MapEntry(bill.toString(), count)),
       'total': total,
+      'date': DateFormat('yyyy-MM-dd').format(widget.offeringData.dateSabbat),
       'fiangonana': "/api/fiangonanas/$fiangonanaId"
     };
 
-    final confirm = await _showConfirmDialog('Voulez-vous synchroniser l\'offrande "$offering" ?');
+    final confirm = await _showConfirmDialog(
+      isUpdate
+          ? 'Mettre à jour l\'offrande "$offering" (écarts avec la base) ?'
+          : 'Voulez-vous synchroniser l\'offrande "$offering" ?',
+    );
+    if (!mounted) return;
     if (confirm != true) {
       setState(() => _isLoading[offering] = false);
       return;
     }
 
     try {
-      final response = await ApiService().syncOffering(data);
+      final api = ApiService();
+      final response = isUpdate
+          ? await api.updateOffering(remoteId, data)
+          : await api.syncOffering(data);
+      if (!mounted) return;
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        int? savedId = remoteId;
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map) {
+            if (body['id'] is int) {
+              savedId = body['id'] as int;
+            } else {
+              final iri = body['@id']?.toString();
+              final match =
+                  iri == null ? null : RegExp(r'/(\d+)$').firstMatch(iri);
+              if (match != null) savedId = int.tryParse(match.group(1)!);
+            }
+          }
+        } catch (_) {}
+
         setState(() {
-          widget.offeringData.updateSyncStatus(offering, true);
+          widget.offeringData.rememberSyncedOffering(offering, savedId);
           _isLoading[offering] = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$offering synchronisé')));
+        _notify();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  isUpdate ? '$offering mis à jour' : '$offering synchronisé')),
+        );
       } else {
-        throw Exception();
+        throw Exception('HTTP ${response.statusCode}');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading[offering] = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur de synchronisation')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur de synchronisation : $e')),
+      );
     }
   }
 
@@ -165,38 +221,113 @@ class _SyncScreenState extends State<SyncScreen> {
 
     final expenses = widget.offeringData.expenseData.expenses;
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final fiangonanaId = prefs.getInt('fiangonana_id');
+    final remoteIds = List<int>.from(widget.offeringData.remoteExpenseIds);
+    final isUpdate = remoteIds.isNotEmpty;
 
-    final data = {
-      'expenses': expenses.map((e) => {
-        'description': e.label,
-        'amount': e.amount,
-        'date': DateFormat('yyyy-MM-dd').format(e.date),
-        'fiangonana': "/api/fiangonanas/$fiangonanaId"
-      }).toList()
-    };
+    if (fiangonanaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur ID Fiangonana')));
+      setState(() => _isLoading['expenses'] = false);
+      return;
+    }
 
-    final confirm = await _showConfirmDialog('Synchroniser les dépenses ?');
+    final confirm = await _showConfirmDialog(
+      isUpdate
+          ? 'Mettre à jour les dépenses (remplacer en base) ?'
+          : 'Synchroniser les dépenses ?',
+    );
+    if (!mounted) return;
     if (confirm != true) {
       setState(() => _isLoading['expenses'] = false);
       return;
     }
 
     try {
-      final response = await ApiService().syncExpenses(data);
+      final api = ApiService();
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      for (final id in remoteIds) {
+        final del = await api.deleteExpense(id);
+        if (del.statusCode != 204 && del.statusCode != 200) {
+          throw Exception('Suppression dépense #$id (${del.statusCode})');
+        }
+      }
+      if (!mounted) return;
+
+      if (expenses.isEmpty) {
         setState(() {
-          widget.offeringData.updateExpensesSyncStatus(true);
+          widget.offeringData.rememberSyncedExpenses([]);
           _isLoading['expenses'] = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dépenses synchronisées')));
+        _notify();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dépenses mises à jour (vide)')),
+        );
+        return;
+      }
+
+      final data = {
+        'expenses': expenses
+            .map((e) => {
+                  'description': e.label,
+                  'amount': e.amount,
+                  'date': DateFormat('yyyy-MM-dd')
+                      .format(widget.offeringData.dateSabbat),
+                  'fiangonana': "/api/fiangonanas/$fiangonanaId"
+                })
+            .toList()
+      };
+
+      final response = await api.syncExpenses(data);
+      if (!mounted) return;
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final created = <Expense>[];
+        try {
+          final body = jsonDecode(response.body);
+          final list = body is List
+              ? body
+              : (body is Map
+                  ? (body['member'] ?? body['hydra:member'])
+                  : null);
+          if (list is List) {
+            for (final item in list) {
+              if (item is Map) {
+                created.add(Expense.fromApi(Map<String, dynamic>.from(item)));
+              }
+            }
+          }
+        } catch (_) {}
+
+        if (created.isEmpty) {
+          created.addAll(expenses.map((e) => Expense(
+                label: e.label,
+                amount: e.amount,
+                date: widget.offeringData.dateSabbat,
+              )));
+        }
+
+        setState(() {
+          widget.offeringData.rememberSyncedExpenses(created);
+          _isLoading['expenses'] = false;
+        });
+        _notify();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(isUpdate
+                  ? 'Dépenses mises à jour'
+                  : 'Dépenses synchronisées')),
+        );
       } else {
-        throw Exception();
+        throw Exception('HTTP ${response.statusCode}');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading['expenses'] = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur dépenses')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur dépenses : $e')),
+      );
     }
   }
 
@@ -207,8 +338,12 @@ class _SyncScreenState extends State<SyncScreen> {
         title: const Text('Confirmation'),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmer')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Confirmer')),
         ],
       ),
     );
@@ -218,55 +353,223 @@ class _SyncScreenState extends State<SyncScreen> {
     return NumberFormat.currency(locale: 'fr_FR', symbol: ' AR').format(amount);
   }
 
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: widget.offeringData.dateSabbat,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+      helpText: 'Date du sabbat',
+    );
+    if (picked == null) return;
+    try {
+      final found = await widget.offeringData.loadFromServerForDate(picked);
+      if (!mounted) return;
+      setState(() {});
+      _notify();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: found ? AppColors.warning : AppColors.success,
+          content: Text(
+            found
+                ? 'Données existantes chargées — mode modification'
+                : 'Aucune donnée pour cette date — nouvelle saisie',
+          ),
+        ),
+      );
+    } catch (e) {
+      await widget.offeringData.updateDateSabbat(picked);
+      if (!mounted) return;
+      setState(() {});
+      _notify();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de charger les données : $e')),
+      );
+    }
+  }
+
+  Widget _syncDoneBar(String label) {
+    return Container(
+      width: double.infinity,
+      height: 48,
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              color: AppColors.success,
+              fontSize: 15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final dateLabel =
+        DateFormat('dd/MM/yyyy').format(widget.offeringData.dateSabbat);
+    final body = ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      children: [
+        if (widget.section != SyncSection.finalizeOnly) ...[
+          Text(
+            widget.section == SyncSection.syncOnly
+                ? 'Fampitoviana / Synchronisation'
+                : 'Synchronisation',
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Jereo ary alefaso ny angona eo an-toerana',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (widget.offeringData.isModificationMode) ...[
+            const FvaModificationBanner(),
+            const SizedBox(height: 12),
+          ],
+          FvaCard(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(21),
+                  border: Border.all(color: AppColors.outline),
+                ),
+                child: const Icon(Icons.calendar_today,
+                    color: AppColors.primary, size: 20),
+              ),
+              title: Text(
+                'Date du sabbat',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              subtitle: Text(
+                widget.offeringData.isModificationMode
+                    ? '$dateLabel · mode modification'
+                    : dateLabel,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              trailing: const Icon(Icons.edit_outlined, size: 20),
+              onTap: _pickDate,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...offeringTypes.map(_buildOfferingCard),
+          _buildExpenseCard(),
+        ],
+        if (widget.section != SyncSection.syncOnly) _buildFinalizeSection(),
+      ],
+    );
+
+    if (widget.embedded) return body;
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(156, 24, 196, 1),
-        title: const Text('Synchronisation global', style: TextStyle(color: Colors.white)),
+        title: const Text('Synchronisation'),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: offeringTypes.length + 2, // +1 pour Dépenses, +1 pour Finalisation
-        itemBuilder: (context, index) {
-          if (index < offeringTypes.length) {
-            return _buildOfferingCard(offeringTypes[index]);
-          } else if (index == offeringTypes.length) {
-            return _buildExpenseCard();
-          } else {
-            return _buildFinalizeSection();
-          }
-        },
-      ),
+      body: body,
     );
   }
 
   Widget _buildOfferingCard(String offering) {
     final total = widget.offeringData.calculateTotalForOffering(offering);
-    final isSynced = widget.offeringData.syncStatus[offering] ?? false;
+    final needsSync = widget.offeringData.needsOfferingSync(offering);
+    final isSynced = !needsSync && total > 0;
     final isLoading = _isLoading[offering] ?? false;
+    final isUpdate =
+        widget.offeringData.remoteOfferingIds.containsKey(offering);
+    final canSync = needsSync && !isLoading && (total > 0 || isUpdate);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: FvaCard(
+        accent: needsSync && isUpdate
+            ? AppColors.warning
+            : (isSynced ? AppColors.success : null),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(offering, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(formatAmount(total), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color.fromRGBO(156, 24, 196, 1))),
+                Expanded(
+                  child: Text(offering,
+                      style: GoogleFonts.poppins(
+                          fontSize: 17, fontWeight: FontWeight.w700)),
+                ),
+                if (isSynced)
+                  const FvaStatusChip(
+                    label: 'Synchronisé',
+                    kind: FvaStatusKind.synced,
+                  )
+                else if (needsSync && isUpdate)
+                  const FvaStatusChip(
+                    label: 'À resync',
+                    kind: FvaStatusKind.pending,
+                  )
+                else if (total > 0)
+                  const FvaStatusChip(
+                    label: 'À sync',
+                    kind: FvaStatusKind.pending,
+                  ),
               ],
             ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: isSynced || isLoading || total == 0 ? null : () => sendOfferingToApi(offering),
-              icon: isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(isSynced ? Icons.check_circle : Icons.sync),
-              label: Text(isSynced ? 'Synchronisé' : 'Synchroniser'),
-              style: ElevatedButton.styleFrom(backgroundColor: isSynced ? Colors.grey : const Color.fromRGBO(156, 24, 196, 1), foregroundColor: Colors.white),
-            ),
+            const SizedBox(height: 6),
+            Text(formatAmount(total),
+                style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary)),
+            if (needsSync && isUpdate)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Fanavaozana — à resynchroniser',
+                  style: GoogleFonts.poppins(
+                      fontSize: 12, color: AppColors.warning),
+                ),
+              ),
+            const SizedBox(height: 12),
+            if (isSynced)
+              _syncDoneBar('Synchronisé')
+            else
+              FvaPrimaryButton(
+                label: isLoading
+                    ? 'En cours...'
+                    : (isUpdate ? 'Resynchroniser' : 'Synchroniser'),
+                icon: isUpdate ? Icons.sync_problem : Icons.sync,
+                color: AppColors.success,
+                loading: isLoading,
+                onPressed: canSync ? () => sendOfferingToApi(offering) : null,
+              ),
           ],
         ),
       ),
@@ -275,30 +578,69 @@ class _SyncScreenState extends State<SyncScreen> {
 
   Widget _buildExpenseCard() {
     final totalExpenses = widget.offeringData.getTotalExpenses();
-    final isSynced = widget.offeringData.expensesSyncStatus;
+    final needsSync = widget.offeringData.needsExpensesSync();
+    final isSynced = !needsSync &&
+        (totalExpenses > 0 || widget.offeringData.remoteExpenseIds.isNotEmpty);
     final isLoading = _isLoading['expenses'] ?? false;
+    final isUpdate = widget.offeringData.remoteExpenseIds.isNotEmpty;
+    final canSync = needsSync && !isLoading;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: FvaCard(
+        accent: needsSync && isUpdate
+            ? AppColors.warning
+            : (isSynced ? AppColors.success : AppColors.expense),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Dépenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(formatAmount(totalExpenses), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color.fromRGBO(156, 24, 196, 1))),
+                Expanded(
+                  child: Text('Dépenses',
+                      style: GoogleFonts.poppins(
+                          fontSize: 17, fontWeight: FontWeight.w700)),
+                ),
+                if (isSynced)
+                  const FvaStatusChip(
+                    label: 'Synchronisé',
+                    kind: FvaStatusKind.synced,
+                  )
+                else if (needsSync)
+                  const FvaStatusChip(
+                    label: 'À sync',
+                    kind: FvaStatusKind.pending,
+                  ),
               ],
             ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: isSynced || isLoading || totalExpenses == 0 ? null : () => sendExpensesToApi(),
-              icon: isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(isSynced ? Icons.check_circle : Icons.sync),
-              label: Text(isSynced ? 'Synchronisé' : 'Synchroniser'),
-              style: ElevatedButton.styleFrom(backgroundColor: isSynced ? Colors.grey : const Color.fromRGBO(156, 24, 196, 1), foregroundColor: Colors.white),
-            ),
+            const SizedBox(height: 6),
+            Text(formatAmount(totalExpenses),
+                style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.expense)),
+            if (needsSync && isUpdate)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Modifié localement — à resynchroniser',
+                  style: GoogleFonts.poppins(
+                      fontSize: 12, color: AppColors.warning),
+                ),
+              ),
+            const SizedBox(height: 12),
+            if (isSynced)
+              _syncDoneBar('Synchronisé')
+            else
+              FvaPrimaryButton(
+                label: isLoading
+                    ? 'En cours...'
+                    : (isUpdate ? 'Resynchroniser' : 'Synchroniser'),
+                icon: isUpdate ? Icons.sync_problem : Icons.sync,
+                color: AppColors.success,
+                loading: isLoading,
+                onPressed: canSync ? sendExpensesToApi : null,
+              ),
           ],
         ),
       ),
@@ -306,85 +648,198 @@ class _SyncScreenState extends State<SyncScreen> {
   }
 
   Widget _buildFinalizeSection() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20, bottom: 40),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[400]!),
-      ),
-      child: Column(
-        children: [
-          const Text("FINALISATION DU SABBAT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 16),
+    final dateLabel =
+        DateFormat('dd/MM/yyyy').format(widget.offeringData.dateSabbat);
+    final collectes = offeringTypes
+        .where((t) => widget.offeringData.calculateTotalForOffering(t) > 0)
+        .toList();
 
-          // ── Résumé financier ──
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color.fromRGBO(156, 24, 196, 1), width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Résumé", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromRGBO(156, 24, 196, 1))),
-                const Divider(),
-                _buildSummaryRow("Ambimbola teo aloha", widget.offeringData.ambimbolaTeoAloha),
-                _buildSummaryRow("Vola miditra androany", widget.offeringData.getFitambaranIreo()),
-                _buildSummaryRow("Vola nivoaka", widget.offeringData.getTotalExpenses(), isExpense: true),
-                const Divider(),
-                _buildSummaryRow("Total", widget.offeringData.getVolaSisaEoAntanana(), isTotal: true),
-                const Divider(),
-                const Text("Net à verser", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromRGBO(156, 24, 196, 1))),
-                _buildSummaryRow("Caution", _caution),
-                _buildSummaryRow("Rar", _rar),
-                _buildSummaryRow("Vola miditra A", widget.offeringData.calculateVolaMiditraA()),
-                const Divider(),
-                _buildSummaryRow("A verser", widget.offeringData.calculateVolaMiditraA() + _caution + _rar, isTotal: true),
-
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'Famintinana',
+          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700),
+        ),
+        Text(
+          'Récapitulatif final — sabbat du $dateLabel',
+          style: GoogleFonts.poppins(
+              fontSize: 13, color: AppColors.onSurfaceVariant),
+        ),
+        const SizedBox(height: 14),
+        FvaCard(
+          accent: AppColors.income,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Entrées',
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.income)),
+              const SizedBox(height: 8),
+              if (collectes.isEmpty)
+                Text(
+                  'Tsy misy collecte',
+                  style: GoogleFonts.poppins(
+                      fontSize: 13, color: AppColors.onSurfaceVariant),
+                )
+              else
+                ...collectes.map(
+                  (t) => _buildSummaryRow(
+                    t,
+                    widget.offeringData.calculateTotalForOffering(t),
+                  ),
+                ),
+              _buildSummaryRow(
+                  'Ambimbola teo aloha', widget.offeringData.ambimbolaTeoAloha),
+              _buildSummaryRow('Vola miditra androany',
+                  widget.offeringData.getFitambaranIreo()),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        FvaCard(
+          accent: AppColors.expense,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Sorties & solde',
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.expense)),
+              const SizedBox(height: 8),
+              _buildSummaryRow('Vola nivoaka',
+                  widget.offeringData.getTotalExpenses(),
+                  isExpense: true),
+              const Divider(),
+              _buildSummaryRow(
+                  'Vola sisa eo an-tanana',
+                  widget.offeringData.getVolaSisaEoAntanana(),
+                  isTotal: true),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        FvaCard(
+          accent: AppColors.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Net à verser',
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary)),
+              const SizedBox(height: 8),
+              _buildSummaryRow('Caution', _caution),
+              _buildSummaryRow('Rad', _rar),
+              _buildSummaryRow(
+                  'Vola miditra A', widget.offeringData.calculateVolaMiditraA()),
+              const Divider(),
+              _buildSummaryRow(
+                'A verser',
+                widget.offeringData.calculateVolaMiditraA() + _caution + _rar,
+                isTotal: true,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        FvaCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Sarin\'ny taratasy sonia',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+              Text(
+                'Photo du bordereau signé',
+                style: GoogleFonts.poppins(
+                    fontSize: 12, color: AppColors.onSurfaceVariant),
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: _pickImage,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                child: CustomPaint(
+                  painter: _DashedBorderPainter(
+                    color: AppColors.outline,
+                    radius: AppRadii.md,
+                  ),
+                  child: Container(
+                    height: _bordereauImage == null ? 140 : 180,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(12),
+                    child: _bordereauImage == null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.photo_camera_outlined,
+                                  size: 36,
+                                  color: AppColors.primary.withValues(alpha: 0.8)),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tapéo mba maka sary',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              Text(
+                                'Appareil photo uniquement',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(AppRadii.sm),
+                            child: Image.file(
+                              _bordereauImage!,
+                              height: 156,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+              if (_bordereauImage != null) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _pickImage,
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Changer la photo'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
-          const SizedBox(height: 16),
-
-          // ── Photo bordereau ──
-          if (_bordereauImage != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Image.file(_bordereauImage!, height: 150),
-            ),
-          ElevatedButton.icon(
-            onPressed: _pickImage,
-            icon: const Icon(Icons.camera_alt),
-            label: Text(_bordereauImage == null ? "Prendre photo Bordereau" : "Changer la photo"),
-          ),
-          const SizedBox(height: 15),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-              onPressed: _isFinalizing ? null : finalizeSabbat,
-              child: _isFinalizing
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("VALIDER ET FERMER LE SABBAT", style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        FvaPrimaryButton(
+          label: 'Hamita ny Sabata',
+          icon: Icons.check_circle,
+          color: AppColors.primary,
+          loading: _isFinalizing,
+          onPressed: _isFinalizing ? null : finalizeSabbat,
+        ),
+      ],
     );
   }
 
-  Widget _buildSummaryRow(String label, double amount, {bool isExpense = false, bool isTotal = false}) {
+  Widget _buildSummaryRow(String label, double amount,
+      {bool isExpense = false, bool isTotal = false}) {
     final color = isTotal
-        ? const Color.fromRGBO(156, 24, 196, 1)
+        ? AppColors.primary
         : isExpense
-            ? Colors.red[700]
-            : Colors.black87;
+            ? AppColors.expense
+            : AppColors.onSurface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -393,7 +848,7 @@ class _SyncScreenState extends State<SyncScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: GoogleFonts.poppins(
               fontSize: isTotal ? 14 : 13,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
               color: color,
@@ -401,7 +856,7 @@ class _SyncScreenState extends State<SyncScreen> {
           ),
           Text(
             formatAmount(amount),
-            style: TextStyle(
+            style: GoogleFonts.poppins(
               fontSize: isTotal ? 14 : 13,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
               color: color,
@@ -411,4 +866,37 @@ class _SyncScreenState extends State<SyncScreen> {
       ),
     );
   }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+
+  _DashedBorderPainter({required this.color, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    const dashWidth = 6.0;
+    const dashSpace = 4.0;
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = distance + dashWidth;
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

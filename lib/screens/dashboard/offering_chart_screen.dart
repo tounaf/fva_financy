@@ -3,8 +3,10 @@ import 'package:fva_financy/models/offering_data_chart.dart';
 import 'package:fva_financy/screens/dashboard/offering_chart_page.dart';
 
 class OfferingChartScreen extends StatefulWidget {
+  const OfferingChartScreen({super.key});
+
   @override
-  _OfferingChartScreenState createState() => _OfferingChartScreenState();
+  State<OfferingChartScreen> createState() => _OfferingChartScreenState();
 }
 
 class _OfferingChartScreenState extends State<OfferingChartScreen> {
@@ -19,7 +21,7 @@ class _OfferingChartScreenState extends State<OfferingChartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Historique de Compte")),
+      appBar: AppBar(title: const Text("Historique de Compte")),
       body: FutureBuilder<List<OfferingDataChart>>(
         future: futureOfferings,
         builder: (context, snapshot) {

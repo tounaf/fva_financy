@@ -57,7 +57,7 @@ class _OfferingChartPageState extends State<OfferingChartPage> {
                       dotData: const FlDotData(show: true),
                       belowBarData: BarAreaData(
                         show: true, 
-                        color: Colors.blue.withOpacity(0.1)
+                        color: Colors.blue.withValues(alpha: 0.1)
                       ),
                     ),
                   ],

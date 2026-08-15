@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fva_financy/services/api_service.dart';
+import 'package:fva_financy/theme/app_theme.dart';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class VersementScreen extends StatefulWidget {
   final int sabbatValidationId;
@@ -21,7 +23,7 @@ class _VersementScreenState extends State<VersementScreen> {
   final _formKey = GlobalKey<FormState>();
   final _refController = TextEditingController();
   final _fraisController = TextEditingController(text: '0');
-  
+
   String _typeVersement = 'MOBILE_MONEY';
   DateTime _dateVersement = DateTime.now();
   bool _isLoading = false;
@@ -38,7 +40,7 @@ class _VersementScreenState extends State<VersementScreen> {
       context: context,
       initialDate: _dateVersement,
       firstDate: DateTime(2024),
-      lastDate: DateTime.now(), // On ne peut pas verser dans le futur
+      lastDate: DateTime.now(),
       locale: const Locale("fr", "FR"),
     );
     if (picked != null && picked != _dateVersement) {
@@ -53,15 +55,12 @@ class _VersementScreenState extends State<VersementScreen> {
 
     setState(() => _isLoading = true);
 
-    // Structure exacte pour API Platform (Symfony)
     final Map<String, dynamic> payload = {
       'type': _typeVersement,
       'montant': widget.montantSisa,
       'reference': _refController.text.trim(),
       'frais': double.tryParse(_fraisController.text) ?? 0.0,
       'sabbatValidation': '/api/sabbat_validations/${widget.sabbatValidationId}',
-      // Optionnel : ajouter la date effective si vous l'avez ajoutée à l'entité
-      // 'dateVersement': _dateVersement.toIso8601String(), 
     };
 
     try {
@@ -71,7 +70,8 @@ class _VersementScreenState extends State<VersementScreen> {
         _showSuccessDialog();
       } else {
         final error = jsonDecode(response.body);
-        _showSnackBar("Erreur : ${error['detail'] ?? 'Echec de l\'envoi'}", isError: true);
+        _showSnackBar("Erreur : ${error['detail'] ?? 'Echec de l\'envoi'}",
+            isError: true);
       }
     } catch (e) {
       _showSnackBar("Erreur réseau : $e", isError: true);
@@ -85,18 +85,20 @@ class _VersementScreenState extends State<VersementScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Icon(Icons.check_circle, color: Colors.green, size: 50),
-        content: const Text(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.md)),
+        title: const Icon(Icons.check_circle, color: AppColors.success, size: 50),
+        content: Text(
           "Le versement a été enregistré et lié au Sabbat avec succès.",
           textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(),
         ),
         actions: [
           Center(
             child: ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Ferme le dialogue
-                Navigator.of(context).pop(); // Retourne à la liste des Sabbats à verser
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
               child: const Text("TERMINER"),
             ),
@@ -110,18 +112,20 @@ class _VersementScreenState extends State<VersementScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        backgroundColor: isError ? AppColors.expense : AppColors.success,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final amountLabel = NumberFormat.currency(locale: 'fr_FR', symbol: ' Ar')
+        .format(widget.montantSisa);
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text("Détails du Versement", style: GoogleFonts.poppins()),
-        backgroundColor: const Color(0xFF673AB7), // Vibrant Purple
-        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -130,66 +134,86 @@ class _VersementScreenState extends State<VersementScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Récapitulatif du montant
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.deepPurple.withOpacity(0.2)),
-                ),
+              FvaCard(
+                accent: AppColors.primary,
                 child: Column(
                   children: [
-                    const Text("MONTANT À VERSER", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    const SizedBox(height: 5),
                     Text(
-                      "${widget.montantSisa.toStringAsFixed(0)} Ar",
-                      style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                      "MONTANT À VERSER",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      amountLabel,
+                      style: GoogleFonts.poppins(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 25),
-
-              // Sélecteur de Date
-              ListTile(
-                tileColor: Colors.grey[100],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
-                title: const Text("Date effective du versement"),
-                subtitle: Text("${_dateVersement.day}/${_dateVersement.month}/${_dateVersement.year}"),
-                onTap: _choisirDate,
+              const SizedBox(height: 20),
+              FvaCard(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: ListTile(
+                  leading: const Icon(Icons.calendar_today,
+                      color: AppColors.primary),
+                  title: Text(
+                    "Date effective du versement",
+                    style: GoogleFonts.poppins(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    DateFormat('dd/MM/yyyy').format(_dateVersement),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: _choisirDate,
+                ),
               ),
-              const SizedBox(height: 25),
-
-              // Mode de versement
-              const Text("Mode de versement", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              Text(
+                "Mode de versement",
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 10),
               SegmentedButton<String>(
                 segments: const [
-                  ButtonSegment(value: 'MOBILE_MONEY', label: Text('M-Money'), icon: Icon(Icons.smartphone)),
-                  ButtonSegment(value: 'CASH', label: Text('Espèces'), icon: Icon(Icons.money)),
+                  ButtonSegment(
+                      value: 'MOBILE_MONEY',
+                      label: Text('M-Money'),
+                      icon: Icon(Icons.smartphone)),
+                  ButtonSegment(
+                      value: 'CASH',
+                      label: Text('Espèces'),
+                      icon: Icon(Icons.money)),
                 ],
                 selected: {_typeVersement},
                 onSelectionChanged: (Set<String> newSelection) {
                   setState(() => _typeVersement = newSelection.first);
                 },
               ),
-              const SizedBox(height: 25),
-
-              // Référence ou Porteur
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _refController,
                 decoration: InputDecoration(
-                  labelText: _typeVersement == 'MOBILE_MONEY' ? 'Référence Transaction (ID)' : 'Nom du porteur (Trésorier...)',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: Icon(_typeVersement == 'MOBILE_MONEY' ? Icons.numbers : Icons.person),
+                  labelText: _typeVersement == 'MOBILE_MONEY'
+                      ? 'Référence Transaction (ID)'
+                      : 'Nom du porteur (Trésorier...)',
+                  prefixIcon: Icon(_typeVersement == 'MOBILE_MONEY'
+                      ? Icons.numbers
+                      : Icons.person),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Ce champ est obligatoire' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Ce champ est obligatoire'
+                    : null,
               ),
-              const SizedBox(height: 20),
-
-              // Frais (Seulement pour Mobile Money)
+              const SizedBox(height: 16),
               if (_typeVersement == 'MOBILE_MONEY')
                 TextFormField(
                   controller: _fraisController,
@@ -197,27 +221,17 @@ class _VersementScreenState extends State<VersementScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Frais de transfert déduits (Ar)',
                     hintText: '0',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.remove_circle_outline, color: Colors.red),
+                    prefixIcon:
+                        Icon(Icons.remove_circle_outline, color: AppColors.expense),
                   ),
                 ),
-
-              const SizedBox(height: 40),
-
-              // Bouton de validation
-              SizedBox(
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _soumettreVersement,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[700],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white) 
-                    : const Text("CONFIRMER LE VERSEMENT", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
+              const SizedBox(height: 32),
+              FvaPrimaryButton(
+                label: 'Confirmer le versement',
+                icon: Icons.check_circle,
+                color: AppColors.success,
+                loading: _isLoading,
+                onPressed: _isLoading ? null : _soumettreVersement,
               ),
             ],
           ),

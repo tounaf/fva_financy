@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:fva_financy/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../models/expense.dart';
 import '../models/offering_data.dart';
-import '../screens/offering_counter_screen.dart' as screen;
 
 class ExpenseScreen extends StatefulWidget {
   final OfferingData offeringData;
   final VoidCallback? onDataUpdated;
+  final bool embedded;
 
-  const ExpenseScreen({super.key, required this.offeringData, this.onDataUpdated});
+  const ExpenseScreen({
+    super.key,
+    required this.offeringData,
+    this.onDataUpdated,
+    this.embedded = false,
+  });
 
   @override
-  _ExpenseScreenState createState() => _ExpenseScreenState();
+  State<ExpenseScreen> createState() => _ExpenseScreenState();
 }
 
 class _ExpenseScreenState extends State<ExpenseScreen> {
@@ -20,17 +26,21 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   final _amountController = TextEditingController();
   DateTime? _selectedDate;
 
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.offeringData.dateSabbat;
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
+      initialDate: _selectedDate ?? widget.offeringData.dateSabbat,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: DateTime(2035),
     );
     if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+      setState(() => _selectedDate = picked);
     }
   }
 
@@ -42,25 +52,30 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         amount,
         _selectedDate!,
       );
-
+      widget.offeringData.markExpensesDirty();
       widget.onDataUpdated?.call();
 
       setState(() {
         _labelController.clear();
         _amountController.clear();
-        _selectedDate = null;
+        _selectedDate = widget.offeringData.dateSabbat;
       });
     }
   }
 
   Future<void> _deleteExpense(int index) async {
+    final ok = await FvaConfirm.show(
+      context,
+      title: 'Supprimer ?',
+      message: 'Ity dépense ity dia hofafana.',
+      confirmLabel: 'Supprimer',
+      destructive: true,
+    );
+    if (!ok) return;
     await widget.offeringData.expenseData.deleteExpense(index);
-
+    widget.offeringData.markExpensesDirty();
     widget.onDataUpdated?.call();
-
-    if (mounted) {
-      setState(() {});
-    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -76,148 +91,148 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: screen.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: screen.vibrantPurple, // Remplacement ici
-        title: const Text(
-          'Dépenses',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    final expenses = widget.offeringData.expenseData.expenses;
+    final dateLabel = _selectedDate == null
+        ? '—'
+        : DateFormat('dd/MM/yyyy').format(_selectedDate!);
+
+    final body = ListView(
+      padding: EdgeInsets.fromLTRB(widget.embedded ? 0 : 16, 0, widget.embedded ? 0 : 16, 16),
+      children: [
+        FvaCard(
+          accent: AppColors.expense,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ajouter une dépense',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _labelController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dépense',
+                    prefixIcon: Icon(Icons.receipt_long_outlined, size: 20),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Azafady, ampidiro ny anton\'ny dépense';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Montant (AR)',
+                    prefixIcon: Icon(Icons.payments_outlined, size: 20),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Azafady, ampidiro ny montant';
+                    }
+                    if (double.tryParse(value) == null) {
+                      return 'Azafady, ampidiro montant';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => _selectDate(context),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Date',
+                      prefixIcon: Icon(Icons.calendar_today, size: 20),
+                    ),
+                    child: Text(
+                      dateLabel,
+                      style: GoogleFonts.poppins(fontSize: 15),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                FvaPrimaryButton(
+                  label: 'Valider dépenses',
+                  icon: Icons.check,
+                  color: AppColors.expense,
+                  onPressed: _submitExpense,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: _labelController,
-                    decoration: const InputDecoration(
-                      labelText: 'Dépense',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Azafady, ampidiro ny anton\'ny dépense';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Montant   (AR)',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Azafady, ampidiro ny montant';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return 'Azafady, ampidiro montant';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedDate == null
-                            ? 'Date'
-                            : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
-                        style: const TextStyle(fontSize: 16),
+        const SizedBox(height: 16),
+        if (expenses.isEmpty)
+          const FvaEmptyState(
+            icon: Icons.receipt_long_outlined,
+            title: 'Tsy misy dépense',
+            subtitle: 'Ampidiro ny fandaniana etsy ambony',
+          )
+        else
+          ...List.generate(expenses.length, (index) {
+            final expense = expenses[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: FvaCard(
+                accent: AppColors.expense,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(expense.label,
+                              style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600)),
+                          Text(
+                            expense.formattedDate,
+                            style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: AppColors.onSurfaceVariant),
+                          ),
+                        ],
                       ),
-                      ElevatedButton(
-                        onPressed: () => _selectDate(context),
-                        child: const Text('Selectionner date'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              screen.vibrantPurple, // Remplacement ici
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _submitExpense,
-                    child: const Text('Valider dépenses'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: screen.vibrantPurple, // Remplacement ici
-                      foregroundColor: Colors.white,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: widget.offeringData.expenseData.expenses.length,
-              itemBuilder: (context, index) {
-                final expense = widget.offeringData.expenseData.expenses[index];
-                return ListTile(
-                  title: Text(expense.label),
-                  subtitle: Text('Date: ${expense.formattedDate}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min, // Important pour que la Row ne prenne pas toute la largeur
-                    children: [
-                      Text(expense.formattedAmount),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          // Logique de suppression ici
-                          _deleteExpense(index);
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
+                    Text(expense.formattedAmount,
+                        style:
+                            GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline,
+                          color: AppColors.expense),
+                      onPressed: () => _deleteExpense(index),
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  'Total Dépenses: ${formatAmount(widget.offeringData.getTotalExpenses())}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: screen.vibrantPurple, // Remplacement ici
-                  ),
-                ),
               ),
-            ),
-          ],
+            );
+          }),
+        const SizedBox(height: 8),
+        FvaSummaryTile(
+          title: 'Total Dépenses',
+          value: formatAmount(widget.offeringData.getTotalExpenses()),
+          accent: AppColors.expense,
+          emphasized: true,
         ),
-      ),
+      ],
+    );
+
+    if (widget.embedded) return body;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Dépenses')),
+      body: body,
     );
   }
 }

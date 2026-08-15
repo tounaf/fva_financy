@@ -8,7 +8,7 @@ class SabbatAverserScreen extends StatefulWidget {
   const SabbatAverserScreen({super.key});
 
   @override
-  _SabbatAverserScreenState createState() => _SabbatAverserScreenState();
+  State<SabbatAverserScreen> createState() => _SabbatAverserScreenState();
 }
 
 class _SabbatAverserScreenState extends State<SabbatAverserScreen> {
